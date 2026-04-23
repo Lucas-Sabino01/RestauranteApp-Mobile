@@ -1,43 +1,13 @@
+import type { Categoria, Produto, Pedido, Usuario } from '../types';
+export type { Categoria, Produto, Pedido, Usuario } from '../types';
+export type { ItemCarrinho, Tamanho } from '../types';
+export { MULTIPLICADOR_TAMANHO, TAMANHO_LABELS, formatarPreco } from '../types';
 
-
-export type Categoria = {
-  id: string;
-  nome: string;
-  icone: string;
-};
-
-export type Produto = {
-  id: string;
-  nome: string;
-  descricao: string;
-  preco: number;
-  avaliacao: number;
-  tempo: string;
-  imagem: string;
-  categoria: string;
-  destaque?: boolean;
-  ingredientes?: string[];
-};
-
-export type ItemCarrinho = {
-  produto: Produto;
-  quantidade: number;
-  tamanho: 'P' | 'M' | 'G';
-};
-
-export type Pedido = {
-  id: string;
-  data: string;
-  itens: { nome: string; quantidade: number }[];
-  total: number;
-  status: 'preparando' | 'a_caminho' | 'entregue';
-};
-
-export type Usuario = {
-  id: string;
-  nome: string;
-  email: string;
-  avatar: string;
+export const USUARIO_MOCK: Usuario = {
+  id: '1',
+  nome: 'Lucas',
+  email: 'lucas@email.com',
+  avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
 };
 
 export const CATEGORIAS: Categoria[] = [
@@ -50,7 +20,6 @@ export const CATEGORIAS: Categoria[] = [
 ];
 
 export const PRODUTOS: Produto[] = [
-
   {
     id: '1',
     nome: 'Cappuccino Clássico',
@@ -98,7 +67,6 @@ export const PRODUTOS: Produto[] = [
     categoria: 'Cafés',
     ingredientes: ['Café expresso', 'Leite vaporizado'],
   },
-
   {
     id: '5',
     nome: 'Iced Latte Caramelo',
@@ -133,7 +101,6 @@ export const PRODUTOS: Produto[] = [
     categoria: 'Gelados',
     ingredientes: ['Café cold brew', 'Gelo'],
   },
-
   {
     id: '8',
     nome: 'Bolo de Chocolate',
@@ -167,7 +134,6 @@ export const PRODUTOS: Produto[] = [
     categoria: 'Doces',
     ingredientes: ['Chocolate meio amargo', 'Nozes', 'Manteiga', 'Ovos'],
   },
-
   {
     id: '11',
     nome: 'Croissant Francês',
@@ -186,7 +152,7 @@ export const PRODUTOS: Produto[] = [
     preco: 8.90,
     avaliacao: 4.7,
     tempo: '8 min',
-    imagem: 'https://images.unsplash.com/photo-1596662951482-0c4ba74a6df6?auto=format&fit=crop&w=400&q=80',
+    imagem: 'https://images.unsplash.com/photo-1619221882220-947b3d3c8861?auto=format&fit=crop&w=400&q=80',
     categoria: 'Salgados',
     ingredientes: ['Polvilho azedo', 'Queijo canastra', 'Ovos', 'Óleo'],
   },
@@ -201,7 +167,6 @@ export const PRODUTOS: Produto[] = [
     categoria: 'Salgados',
     ingredientes: ['Pão artesanal', 'Peru defumado', 'Queijo gruyère', 'Rúcula', 'Tomate'],
   },
-
   {
     id: '14',
     nome: 'Suco Natural Laranja',
@@ -237,18 +202,6 @@ export const PRODUTOS: Produto[] = [
   },
 ];
 
-export const MULTIPLICADOR_TAMANHO = {
-  P: 1.0,
-  M: 1.3,
-  G: 1.6,
-};
-
-export const TAMANHO_LABELS = {
-  P: 'Pequeno',
-  M: 'Médio',
-  G: 'Grande',
-};
-
 export const PEDIDOS_MOCK: Pedido[] = [
   {
     id: 'PED001',
@@ -282,23 +235,19 @@ export const PEDIDOS_MOCK: Pedido[] = [
   },
 ];
 
-export const formatarPreco = (valor: number): string => {
-  return `R$ ${valor.toFixed(2).replace('.', ',')}`;
-};
-
 export const getDestaques = (): Produto[] => {
-  return PRODUTOS.filter(p => p.destaque);
+  return PRODUTOS.filter((p) => p.destaque);
 };
 
 export const getProdutosPorCategoria = (categoria: string): Produto[] => {
   if (categoria === 'Tudo') return PRODUTOS;
-  return PRODUTOS.filter(p => p.categoria === categoria);
+  return PRODUTOS.filter((p) => p.categoria === categoria);
 };
 
 export const buscarProdutos = (termo: string): Produto[] => {
   const termoLower = termo.toLowerCase();
   return PRODUTOS.filter(
-    p =>
+    (p) =>
       p.nome.toLowerCase().includes(termoLower) ||
       p.descricao.toLowerCase().includes(termoLower) ||
       p.categoria.toLowerCase().includes(termoLower)

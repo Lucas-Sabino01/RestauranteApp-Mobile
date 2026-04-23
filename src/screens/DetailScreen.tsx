@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
-  ScrollView, Image, TouchableOpacity, Dimensions, Alert,
+  ScrollView, Image, TouchableOpacity, Dimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Toast from 'react-native-toast-message';
 import { COLORS } from '../theme/colors';
-import { Produto, formatarPreco, MULTIPLICADOR_TAMANHO, TAMANHO_LABELS } from '../data/mock';
+import type { Produto, Tamanho } from '../types';
+import { formatarPreco, MULTIPLICADOR_TAMANHO, TAMANHO_LABELS } from '../types';
 import { useCart } from '../contexts/CartContext';
 import { Header } from '../components/Header';
 
 const { width } = Dimensions.get('window');
-
-type Tamanho = 'P' | 'M' | 'G';
-
 export const DetailScreen = ({ route, navigation }: any) => {
   const { produto } = route.params as { produto: Produto };
   const [tamanho, setTamanho] = useState<Tamanho>('M');
@@ -23,14 +24,13 @@ export const DetailScreen = ({ route, navigation }: any) => {
 
   const handleAddToCart = () => {
     addToCart(produto, quantidade, tamanho);
-    Alert.alert(
-      '✅ Adicionado!',
-      `${quantidade}x ${produto.nome} (${TAMANHO_LABELS[tamanho]}) foi adicionado ao carrinho.`,
-      [
-        { text: 'Continuar comprando', style: 'cancel' },
-        { text: 'Ver carrinho', onPress: () => navigation.navigate('CartTab') },
-      ]
-    );
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Toast.show({
+      type: 'success',
+      text1: 'Adicionado ao carrinho!',
+      text2: `${quantidade}x ${produto.nome} (${TAMANHO_LABELS[tamanho]})`,
+      visibilityTime: 2500,
+    });
   };
 
   return (
@@ -48,7 +48,7 @@ export const DetailScreen = ({ route, navigation }: any) => {
               onBack={() => navigation.goBack()}
               rightElement={
                 <TouchableOpacity style={styles.shareBtn}>
-                  <Text style={styles.shareIcon}>📤</Text>
+                  <Ionicons name="share-outline" size={20} color={COLORS.text} />
                 </TouchableOpacity>
               }
             />
@@ -62,22 +62,22 @@ export const DetailScreen = ({ route, navigation }: any) => {
               <Text style={styles.nome}>{produto.nome}</Text>
             </View>
             <View style={styles.avaliacaoBox}>
-              <Text style={styles.estrela}>★</Text>
+              <Ionicons name="star" size={16} color={COLORS.star} />
               <Text style={styles.avaliacao}>{produto.avaliacao}</Text>
             </View>
           </View>
 
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
-              <Text style={styles.metaIcone}>🕐</Text>
+              <Ionicons name="time-outline" size={16} color={COLORS.accent} />
               <Text style={styles.metaTexto}>{produto.tempo}</Text>
             </View>
             <View style={styles.metaItem}>
-              <Text style={styles.metaIcone}>🔥</Text>
+              <Ionicons name="flame-outline" size={16} color={COLORS.accent} />
               <Text style={styles.metaTexto}>Popular</Text>
             </View>
             <View style={styles.metaItem}>
-              <Text style={styles.metaIcone}>⭐</Text>
+              <Ionicons name="star-outline" size={16} color={COLORS.accent} />
               <Text style={styles.metaTexto}>Favorito</Text>
             </View>
           </View>
@@ -105,7 +105,10 @@ export const DetailScreen = ({ route, navigation }: any) => {
                 <TouchableOpacity
                   key={t}
                   style={[styles.tamanhoBotao, isAtivo && styles.tamanhoBotaoAtivo]}
-                  onPress={() => setTamanho(t)}
+                  onPress={() => {
+                    setTamanho(t);
+                    Haptics.selectionAsync();
+                  }}
                 >
                   <Text style={[styles.tamanhoLetra, isAtivo && styles.tamanhoLetraAtiva]}>{t}</Text>
                   <Text style={[styles.tamanhoLabel, isAtivo && styles.tamanhoLabelAtiva]}>
@@ -123,16 +126,22 @@ export const DetailScreen = ({ route, navigation }: any) => {
           <View style={styles.quantidadeRow}>
             <TouchableOpacity
               style={styles.quantidadeBotao}
-              onPress={() => setQuantidade(q => Math.max(1, q - 1))}
+              onPress={() => {
+                setQuantidade((q) => Math.max(1, q - 1));
+                Haptics.selectionAsync();
+              }}
             >
-              <Text style={styles.quantidadeBotaoTexto}>−</Text>
+              <Ionicons name="remove" size={22} color={COLORS.accent} />
             </TouchableOpacity>
             <Text style={styles.quantidadeNumero}>{quantidade}</Text>
             <TouchableOpacity
               style={styles.quantidadeBotao}
-              onPress={() => setQuantidade(q => q + 1)}
+              onPress={() => {
+                setQuantidade((q) => q + 1);
+                Haptics.selectionAsync();
+              }}
             >
-              <Text style={styles.quantidadeBotaoTexto}>+</Text>
+              <Ionicons name="add" size={22} color={COLORS.accent} />
             </TouchableOpacity>
           </View>
         </View>
@@ -143,8 +152,9 @@ export const DetailScreen = ({ route, navigation }: any) => {
           <Text style={styles.precoLabel}>Total</Text>
           <Text style={styles.precoTotal}>{formatarPreco(precoTotal)}</Text>
         </View>
-        <TouchableOpacity style={styles.addButton} onPress={handleAddToCart}>
-          <Text style={styles.addButtonText}>Adicionar ao carrinho 🛒</Text>
+        <TouchableOpacity style={styles.addButton} onPress={handleAddToCart} activeOpacity={0.8}>
+          <Text style={styles.addButtonText}>Adicionar ao carrinho</Text>
+          <Ionicons name="cart" size={20} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -187,7 +197,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  shareIcon: { fontSize: 18 },
 
   content: {
     paddingHorizontal: 20,
@@ -224,11 +233,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,
-  },
-  estrela: {
-    color: COLORS.star,
-    fontSize: 16,
-    marginRight: 4,
+    gap: 4,
   },
   avaliacao: {
     fontSize: 16,
@@ -250,8 +255,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.border,
+    gap: 6,
   },
-  metaIcone: { fontSize: 14, marginRight: 6 },
   metaTexto: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
 
   descricao: {
@@ -342,11 +347,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  quantidadeBotaoTexto: {
-    fontSize: 24,
-    color: COLORS.accent,
-    fontWeight: 'bold',
-  },
   quantidadeNumero: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -386,6 +386,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
   },
   addButtonText: {
     color: COLORS.primary,

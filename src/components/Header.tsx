@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
 
 type Props = {
@@ -13,7 +14,7 @@ export const Header: React.FC<Props> = ({ title, showBack, onBack, rightElement 
   <View style={styles.container}>
     {showBack ? (
       <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-        <Text style={styles.backText}>←</Text>
+        <Ionicons name="chevron-back" size={22} color={COLORS.text} />
       </TouchableOpacity>
     ) : (
       <View style={styles.placeholder} />
@@ -40,10 +41,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
-  },
-  backText: {
-    fontSize: 22,
-    color: COLORS.text,
   },
   title: {
     fontSize: 18,

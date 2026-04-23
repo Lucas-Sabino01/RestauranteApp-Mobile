@@ -3,12 +3,15 @@ import {
   StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
   ScrollView, Image, TouchableOpacity, Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { COLORS } from '../theme/colors';
-import { formatarPreco, MULTIPLICADOR_TAMANHO, TAMANHO_LABELS } from '../data/mock';
+import { formatarPreco, MULTIPLICADOR_TAMANHO, TAMANHO_LABELS } from '../types';
 import { useCart } from '../contexts/CartContext';
 import { Header } from '../components/Header';
+import type { CartScreenProps } from '../navigation/types';
 
-export const CartScreen = ({ navigation }: any) => {
+export const CartScreen = ({ navigation }: CartScreenProps) => {
   const { items, updateQuantity, removeFromCart, clearCart, totalPriceFormatted, totalItems } = useCart();
 
   const handleCheckout = () => {
@@ -25,7 +28,14 @@ export const CartScreen = ({ navigation }: any) => {
       'Tem certeza que deseja remover todos os itens?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Limpar', style: 'destructive', onPress: clearCart },
+        {
+          text: 'Limpar',
+          style: 'destructive',
+          onPress: () => {
+            clearCart();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          },
+        },
       ]
     );
   };
@@ -36,12 +46,12 @@ export const CartScreen = ({ navigation }: any) => {
         <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
         <Header title="Carrinho" />
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>🛒</Text>
+          <Ionicons name="cart-outline" size={80} color={COLORS.textMuted} />
           <Text style={styles.emptyTitulo}>Carrinho vazio</Text>
           <Text style={styles.emptyDesc}>Adicione delícias do nosso cardápio!</Text>
           <TouchableOpacity
             style={styles.emptyBotao}
-            onPress={() => navigation.navigate('HomeTab')}
+            onPress={() => (navigation as any).navigate('HomeTab')}
           >
             <Text style={styles.emptyBotaoTexto}>Explorar cardápio</Text>
           </TouchableOpacity>
@@ -66,7 +76,7 @@ export const CartScreen = ({ navigation }: any) => {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {items.map((item, index) => {
+        {items.map((item) => {
           const precoUnitario = item.produto.preco * MULTIPLICADOR_TAMANHO[item.tamanho];
           const precoSubtotal = precoUnitario * item.quantidade;
 
@@ -78,9 +88,13 @@ export const CartScreen = ({ navigation }: any) => {
                 <View style={styles.itemTopo}>
                   <Text style={styles.itemNome} numberOfLines={1}>{item.produto.nome}</Text>
                   <TouchableOpacity
-                    onPress={() => removeFromCart(item.produto.id, item.tamanho)}
+                    onPress={() => {
+                      removeFromCart(item.produto.id, item.tamanho);
+                      Haptics.selectionAsync();
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Text style={styles.removeIcon}>✕</Text>
+                    <Ionicons name="close" size={18} color={COLORS.textMuted} />
                   </TouchableOpacity>
                 </View>
 
@@ -94,16 +108,22 @@ export const CartScreen = ({ navigation }: any) => {
                   <View style={styles.quantidadeControle}>
                     <TouchableOpacity
                       style={styles.qtyBtn}
-                      onPress={() => updateQuantity(item.produto.id, item.tamanho, item.quantidade - 1)}
+                      onPress={() => {
+                        updateQuantity(item.produto.id, item.tamanho, item.quantidade - 1);
+                        Haptics.selectionAsync();
+                      }}
                     >
-                      <Text style={styles.qtyBtnText}>−</Text>
+                      <Ionicons name="remove" size={16} color={COLORS.text} />
                     </TouchableOpacity>
                     <Text style={styles.qtyNumero}>{item.quantidade}</Text>
                     <TouchableOpacity
                       style={[styles.qtyBtn, styles.qtyBtnAdd]}
-                      onPress={() => updateQuantity(item.produto.id, item.tamanho, item.quantidade + 1)}
+                      onPress={() => {
+                        updateQuantity(item.produto.id, item.tamanho, item.quantidade + 1);
+                        Haptics.selectionAsync();
+                      }}
                     >
-                      <Text style={[styles.qtyBtnText, styles.qtyBtnAddText]}>+</Text>
+                      <Ionicons name="add" size={16} color={COLORS.primary} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -127,8 +147,9 @@ export const CartScreen = ({ navigation }: any) => {
           <Text style={styles.totalLabel}>Total</Text>
           <Text style={styles.totalValor}>{totalPriceFormatted}</Text>
         </View>
-        <TouchableOpacity style={styles.checkoutBtn} onPress={handleCheckout}>
-          <Text style={styles.checkoutBtnText}>Finalizar pedido →</Text>
+        <TouchableOpacity style={styles.checkoutBtn} onPress={handleCheckout} activeOpacity={0.8}>
+          <Text style={styles.checkoutBtnText}>Finalizar pedido</Text>
+          <Ionicons name="arrow-forward" size={18} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -183,11 +204,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  removeIcon: {
-    fontSize: 16,
-    color: COLORS.textMuted,
-    padding: 4,
-  },
   itemTamanho: {
     fontSize: 12,
     color: COLORS.textMuted,
@@ -223,14 +239,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accent,
     borderColor: COLORS.accent,
   },
-  qtyBtnText: {
-    fontSize: 18,
-    color: COLORS.text,
-    fontWeight: 'bold',
-  },
-  qtyBtnAddText: {
-    color: COLORS.primary,
-  },
   qtyNumero: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -245,12 +253,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  emptyIcon: { fontSize: 64, marginBottom: 16 },
   emptyTitulo: {
     fontSize: 22,
     fontWeight: 'bold',
     color: COLORS.text,
     marginBottom: 8,
+    marginTop: 16,
   },
   emptyDesc: {
     fontSize: 15,
@@ -315,6 +323,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     marginTop: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
   },
   checkoutBtnText: {
     color: COLORS.primary,

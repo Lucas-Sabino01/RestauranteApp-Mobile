@@ -3,19 +3,23 @@ import {
   StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
   ScrollView, Image, TouchableOpacity, Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
 import { useAuth } from '../contexts/AuthContext';
+import { useFavorites } from '../contexts/FavoritesContext';
+import type { ProfileScreenProps } from '../navigation/types';
 
 type MenuItem = {
-  icone: string;
+  icone: keyof typeof Ionicons.glyphMap;
   label: string;
   desc: string;
   onPress: () => void;
   danger?: boolean;
 };
 
-export const ProfileScreen = ({ navigation }: any) => {
+export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { favorites } = useFavorites();
 
   const handleLogout = () => {
     Alert.alert('Sair', 'Tem certeza que deseja sair da conta?', [
@@ -29,7 +33,7 @@ export const ProfileScreen = ({ navigation }: any) => {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
         <View style={styles.guestContainer}>
-          <Text style={styles.guestIcon}>👤</Text>
+          <Ionicons name="person-circle-outline" size={80} color={COLORS.textMuted} />
           <Text style={styles.guestTitulo}>Faça login para começar</Text>
           <Text style={styles.guestDesc}>
             Entre na sua conta para fazer pedidos, salvar favoritos e ver seu histórico.
@@ -53,43 +57,43 @@ export const ProfileScreen = ({ navigation }: any) => {
 
   const menuItems: MenuItem[] = [
     {
-      icone: '📦',
+      icone: 'cube-outline',
       label: 'Meus Pedidos',
       desc: 'Acompanhe e veja pedidos anteriores',
       onPress: () => navigation.navigate('Orders'),
     },
     {
-      icone: '❤️',
+      icone: 'heart-outline',
       label: 'Favoritos',
-      desc: 'Itens que você salvou',
-      onPress: () => {},
+      desc: `${favorites.length} itens salvos`,
+      onPress: () => navigation.navigate('Favorites'),
     },
     {
-      icone: '📍',
+      icone: 'location-outline',
       label: 'Endereços',
       desc: 'Gerencie seus endereços de entrega',
       onPress: () => {},
     },
     {
-      icone: '💳',
+      icone: 'card-outline',
       label: 'Pagamento',
       desc: 'Cartões e métodos de pagamento',
       onPress: () => {},
     },
     {
-      icone: '⚙️',
+      icone: 'settings-outline',
       label: 'Configurações',
       desc: 'Notificações, tema e privacidade',
       onPress: () => {},
     },
     {
-      icone: '❓',
+      icone: 'help-circle-outline',
       label: 'Ajuda & Suporte',
       desc: 'Central de ajuda e FAQ',
       onPress: () => {},
     },
     {
-      icone: '🚪',
+      icone: 'log-out-outline',
       label: 'Sair da conta',
       desc: 'Desconectar do aplicativo',
       onPress: handleLogout,
@@ -114,22 +118,18 @@ export const ProfileScreen = ({ navigation }: any) => {
             <Text style={styles.userEmail}>{user?.email}</Text>
           </View>
           <TouchableOpacity style={styles.editBtn}>
-            <Text style={styles.editIcon}>✏️</Text>
+            <Ionicons name="pencil" size={16} color={COLORS.accent} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumero}>12</Text>
-            <Text style={styles.statLabel}>Pedidos</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumero}>5</Text>
+            <Text style={styles.statNumero}>{favorites.length}</Text>
             <Text style={styles.statLabel}>Favoritos</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumero}>3</Text>
-            <Text style={styles.statLabel}>Cupons</Text>
+            <Ionicons name="ribbon" size={20} color={COLORS.accent} />
+            <Text style={styles.statLabel}>Premium</Text>
           </View>
         </View>
 
@@ -144,14 +144,19 @@ export const ProfileScreen = ({ navigation }: any) => {
               onPress={item.onPress}
               activeOpacity={0.7}
             >
-              <Text style={styles.menuIcone}>{item.icone}</Text>
+              <Ionicons
+                name={item.icone}
+                size={22}
+                color={item.danger ? COLORS.danger : COLORS.textSecondary}
+                style={styles.menuIcone}
+              />
               <View style={styles.menuTextos}>
                 <Text style={[styles.menuLabel, item.danger && { color: COLORS.danger }]}>
                   {item.label}
                 </Text>
                 <Text style={styles.menuDesc}>{item.desc}</Text>
               </View>
-              <Text style={styles.menuSeta}>›</Text>
+              <Ionicons name="chevron-forward" size={20} color={COLORS.textMuted} />
             </TouchableOpacity>
           ))}
         </View>
@@ -219,7 +224,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  editIcon: { fontSize: 16 },
 
   statsRow: {
     flexDirection: 'row',
@@ -245,6 +249,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textMuted,
     fontWeight: '500',
+    marginTop: 4,
   },
 
   menuContainer: {
@@ -263,7 +268,6 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   menuIcone: {
-    fontSize: 22,
     marginRight: 14,
   },
   menuTextos: {
@@ -277,10 +281,6 @@ const styles = StyleSheet.create({
   },
   menuDesc: {
     fontSize: 12,
-    color: COLORS.textMuted,
-  },
-  menuSeta: {
-    fontSize: 24,
     color: COLORS.textMuted,
   },
 
@@ -297,12 +297,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  guestIcon: { fontSize: 64, marginBottom: 20 },
   guestTitulo: {
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.text,
     marginBottom: 10,
+    marginTop: 16,
     textAlign: 'center',
   },
   guestDesc: {

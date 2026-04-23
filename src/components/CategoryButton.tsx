@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { COLORS } from '../theme/colors';
-import { Categoria } from '../data/mock';
+import type { Categoria } from '../types';
 
 type Props = {
   categoria: Categoria;

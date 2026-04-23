@@ -1,19 +1,45 @@
 import React from 'react';
 import {
   StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
-  ScrollView, TouchableOpacity,
+  ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
-import { PEDIDOS_MOCK, formatarPreco } from '../data/mock';
+import { formatarPreco } from '../types';
+import { useOrders } from '../hooks/useOrders';
 import { Header } from '../components/Header';
+import type { OrdersScreenProps } from '../navigation/types';
 
 const STATUS_CONFIG = {
-  preparando: { icone: '👨‍🍳', label: 'Preparando', cor: COLORS.warning },
-  a_caminho: { icone: '🛵', label: 'A caminho', cor: COLORS.info },
-  entregue: { icone: '✅', label: 'Entregue', cor: COLORS.success },
+  preparando: { icone: 'restaurant-outline' as const, label: 'Preparando', cor: COLORS.warning },
+  a_caminho: { icone: 'bicycle-outline' as const, label: 'A caminho', cor: COLORS.info },
+  entregue: { icone: 'checkmark-circle-outline' as const, label: 'Entregue', cor: COLORS.success },
 };
 
-export const OrdersScreen = ({ navigation }: any) => {
+export const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
+  const { orders, loading, refetch } = useOrders();
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    refetch();
+    setTimeout(() => setRefreshing(false), 600);
+  };
+
+  if (loading && !refreshing) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+        <View style={{ paddingHorizontal: 16 }}>
+          <Header title="Meus Pedidos" showBack onBack={() => navigation.goBack()} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
@@ -22,8 +48,19 @@ export const OrdersScreen = ({ navigation }: any) => {
         <Header title="Meus Pedidos" showBack onBack={() => navigation.goBack()} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {PEDIDOS_MOCK.map((pedido) => {
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.accent}
+            colors={[COLORS.accent]}
+          />
+        }
+      >
+        {orders.map((pedido) => {
           const statusInfo = STATUS_CONFIG[pedido.status];
           return (
             <View key={pedido.id} style={styles.pedidoCard}>
@@ -33,7 +70,7 @@ export const OrdersScreen = ({ navigation }: any) => {
                   <Text style={styles.pedidoData}>{pedido.data}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: statusInfo.cor + '22' }]}>
-                  <Text style={styles.statusIcone}>{statusInfo.icone}</Text>
+                  <Ionicons name={statusInfo.icone} size={16} color={statusInfo.cor} />
                   <Text style={[styles.statusTexto, { color: statusInfo.cor }]}>
                     {statusInfo.label}
                   </Text>
@@ -55,21 +92,23 @@ export const OrdersScreen = ({ navigation }: any) => {
               </View>
 
               {pedido.status === 'entregue' ? (
-                <TouchableOpacity style={styles.reorderBtn}>
-                  <Text style={styles.reorderBtnText}>Pedir novamente 🔄</Text>
+                <TouchableOpacity style={styles.reorderBtn} activeOpacity={0.8}>
+                  <Text style={styles.reorderBtnText}>Pedir novamente</Text>
+                  <Ionicons name="refresh" size={16} color={COLORS.accent} />
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity style={styles.trackBtn}>
-                  <Text style={styles.trackBtnText}>Acompanhar pedido →</Text>
+                <TouchableOpacity style={styles.trackBtn} activeOpacity={0.8}>
+                  <Text style={styles.trackBtnText}>Acompanhar pedido</Text>
+                  <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
                 </TouchableOpacity>
               )}
             </View>
           );
         })}
 
-        {PEDIDOS_MOCK.length === 0 && (
+        {orders.length === 0 && (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>📦</Text>
+            <Ionicons name="cube-outline" size={64} color={COLORS.textMuted} />
             <Text style={styles.emptyTitulo}>Nenhum pedido</Text>
             <Text style={styles.emptyDesc}>Seus pedidos aparecerão aqui.</Text>
           </View>
@@ -88,6 +127,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 40,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   pedidoCard: {
@@ -121,7 +165,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     gap: 6,
   },
-  statusIcone: { fontSize: 14 },
   statusTexto: {
     fontSize: 13,
     fontWeight: '600',
@@ -172,6 +215,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     marginTop: 14,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
   },
   reorderBtnText: {
     color: COLORS.accent,
@@ -184,6 +230,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     marginTop: 14,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
   },
   trackBtnText: {
     color: COLORS.primary,
@@ -195,12 +244,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 80,
   },
-  emptyIcon: { fontSize: 56, marginBottom: 16 },
   emptyTitulo: {
     fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.text,
     marginBottom: 8,
+    marginTop: 16,
   },
   emptyDesc: {
     fontSize: 14,

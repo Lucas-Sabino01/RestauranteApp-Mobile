@@ -1,30 +1,99 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
-  ScrollView, TextInput, TouchableOpacity,
+  FlatList, TextInput, TouchableOpacity, RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Toast from 'react-native-toast-message';
 import { COLORS } from '../theme/colors';
-import { buscarProdutos, PRODUTOS } from '../data/mock';
+import { useSearchProducts } from '../hooks/useProducts';
 import { useCart } from '../contexts/CartContext';
+import { useFavorites } from '../contexts/FavoritesContext';
 import { ProductCard } from '../components/ProductCard';
+import { ProductCardSkeleton } from '../components/ui/SkeletonLoader';
+import { PRODUTOS } from '../data/mock';
+import type { SearchScreenProps } from '../navigation/types';
+import type { Produto } from '../types';
 
 const PESQUISAS_POPULARES = ['Cappuccino', 'Brownie', 'Iced Latte', 'Croissant', 'Cold Brew'];
 
-export const SearchScreen = ({ navigation }: any) => {
+export const SearchScreen = ({ navigation }: SearchScreenProps) => {
   const [termo, setTermo] = useState('');
   const { addToCart } = useCart();
-  const [favoritos, setFavoritos] = useState<string[]>([]);
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { results, loading, search } = useSearchProducts();
 
-  const resultados = useMemo(() => {
-    if (termo.trim().length === 0) return [];
-    return buscarProdutos(termo);
-  }, [termo]);
+  const sugestoes = useMemo(() => PRODUTOS.slice(0, 4), []);
 
-  const toggleFavorito = (id: string) => {
-    setFavoritos(prev =>
-      prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
-    );
-  };
+  const handleSearch = useCallback((text: string) => {
+    setTermo(text);
+    search(text);
+  }, [search]);
+
+  const handleAddToCart = useCallback((produto: Produto) => {
+    addToCart(produto, 1, 'M');
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Toast.show({
+      type: 'success',
+      text1: 'Adicionado ao carrinho',
+      text2: `${produto.nome} (Médio)`,
+      visibilityTime: 2000,
+    });
+  }, [addToCart]);
+
+  const renderProduct = useCallback(({ item }: { item: Produto }) => (
+    <ProductCard
+      produto={item}
+      variant="horizontal"
+      isFavorito={isFavorite(item.id)}
+      onToggleFavorito={() => toggleFavorite(item.id)}
+      onAddToCart={() => handleAddToCart(item)}
+      onPress={() => navigation.navigate('SearchDetail', { produto: item })}
+    />
+  ), [isFavorite, toggleFavorite, handleAddToCart, navigation]);
+
+  const EmptySearch = () => (
+    <>
+      <View style={styles.secaoTituloRow}>
+        <Ionicons name="flame" size={18} color={COLORS.accent} />
+        <Text style={styles.secaoTitulo}>Pesquisas populares</Text>
+      </View>
+      <View style={styles.tagsContainer}>
+        {PESQUISAS_POPULARES.map((p, i) => (
+          <TouchableOpacity key={i} style={styles.tag} onPress={() => handleSearch(p)}>
+            <Text style={styles.tagTexto}>{p}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <View style={[styles.secaoTituloRow, { marginTop: 24 }]}>
+        <Ionicons name="bulb-outline" size={18} color={COLORS.accent} />
+        <Text style={styles.secaoTitulo}>Sugestões para você</Text>
+      </View>
+      {sugestoes.map((produto) => (
+        <ProductCard
+          key={produto.id}
+          produto={produto}
+          variant="horizontal"
+          isFavorito={isFavorite(produto.id)}
+          onToggleFavorito={() => toggleFavorite(produto.id)}
+          onAddToCart={() => handleAddToCart(produto)}
+          onPress={() => navigation.navigate('SearchDetail', { produto })}
+        />
+      ))}
+    </>
+  );
+
+  const NoResults = () => (
+    <View style={styles.noResults}>
+      <Ionicons name="search-outline" size={64} color={COLORS.textMuted} />
+      <Text style={styles.noResultsTitle}>Nenhum resultado</Text>
+      <Text style={styles.noResultsDesc}>
+        Não encontramos "{termo}". Tente outro termo.
+      </Text>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -34,83 +103,53 @@ export const SearchScreen = ({ navigation }: any) => {
         <Text style={styles.titulo}>Buscar</Text>
 
         <View style={styles.searchContainer}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Ionicons name="search" size={18} color={COLORS.textMuted} />
           <TextInput
             style={styles.searchInput}
             placeholder="O que você procura?"
             placeholderTextColor={COLORS.textMuted}
             value={termo}
-            onChangeText={setTermo}
+            onChangeText={handleSearch}
             autoFocus
           />
           {termo.length > 0 && (
-            <TouchableOpacity onPress={() => setTermo('')}>
-              <Text style={styles.clearIcon}>✕</Text>
+            <TouchableOpacity onPress={() => handleSearch('')}>
+              <Ionicons name="close-circle" size={20} color={COLORS.textMuted} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {termo.trim().length === 0 && (
-          <>
-            <Text style={styles.secaoTitulo}>🔥 Pesquisas populares</Text>
-            <View style={styles.tagsContainer}>
-              {PESQUISAS_POPULARES.map((p, i) => (
-                <TouchableOpacity key={i} style={styles.tag} onPress={() => setTermo(p)}>
-                  <Text style={styles.tagTexto}>{p}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={[styles.secaoTitulo, { marginTop: 24 }]}>💡 Sugestões para você</Text>
-            {PRODUTOS.slice(0, 4).map((produto) => (
-              <ProductCard
-                key={produto.id}
-                produto={produto}
-                variant="horizontal"
-                isFavorito={favoritos.includes(produto.id)}
-                onToggleFavorito={() => toggleFavorito(produto.id)}
-                onAddToCart={() => addToCart(produto, 1, 'M')}
-                onPress={() => navigation.navigate('SearchDetail', { produto })}
-              />
-            ))}
-          </>
-        )}
-
-        {termo.trim().length > 0 && resultados.length === 0 && (
-          <View style={styles.noResults}>
-            <Text style={styles.noResultsIcon}>😕</Text>
-            <Text style={styles.noResultsTitle}>Nenhum resultado</Text>
-            <Text style={styles.noResultsDesc}>
-              Não encontramos "{termo}". Tente outro termo.
-            </Text>
-          </View>
-        )}
-
-        {termo.trim().length > 0 && resultados.length > 0 && (
-          <>
+      {termo.trim().length === 0 ? (
+        <FlatList
+          data={[]}
+          renderItem={() => null}
+          ListHeaderComponent={EmptySearch}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        />
+      ) : loading ? (
+        <View style={styles.scrollContent}>
+          {[1, 2, 3].map((i) => <ProductCardSkeleton key={i} />)}
+        </View>
+      ) : results.length === 0 ? (
+        <NoResults />
+      ) : (
+        <FlatList
+          data={results}
+          renderItem={renderProduct}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={
             <Text style={styles.resultCount}>
-              {resultados.length} {resultados.length === 1 ? 'resultado' : 'resultados'}
+              {results.length} {results.length === 1 ? 'resultado' : 'resultados'}
             </Text>
-            {resultados.map((produto) => (
-              <ProductCard
-                key={produto.id}
-                produto={produto}
-                variant="horizontal"
-                isFavorito={favoritos.includes(produto.id)}
-                onToggleFavorito={() => toggleFavorito(produto.id)}
-                onAddToCart={() => addToCart(produto, 1, 'M')}
-                onPress={() => navigation.navigate('SearchDetail', { produto })}
-              />
-            ))}
-          </>
-        )}
-      </ScrollView>
+          }
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -141,28 +180,28 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1,
     borderColor: COLORS.border,
+    gap: 10,
   },
-  searchIcon: { fontSize: 16, marginRight: 10 },
   searchInput: {
     flex: 1,
     fontSize: 15,
     color: COLORS.text,
-  },
-  clearIcon: {
-    fontSize: 16,
-    color: COLORS.textMuted,
-    padding: 4,
   },
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
 
+  secaoTituloRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
   secaoTitulo: {
     fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.text,
-    marginBottom: 14,
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -192,16 +231,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 60,
   },
-  noResultsIcon: { fontSize: 48, marginBottom: 16 },
   noResultsTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.text,
     marginBottom: 8,
+    marginTop: 16,
   },
   noResultsDesc: {
     fontSize: 14,
     color: COLORS.textMuted,
     textAlign: 'center',
+    paddingHorizontal: 40,
   },
 });

@@ -3,10 +3,12 @@ import {
   StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
   TouchableOpacity, TextInput, KeyboardAvoidingView, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
 import { useAuth } from '../contexts/AuthContext';
+import type { LoginScreenProps } from '../navigation/types';
 
-export const LoginScreen = ({ navigation }: any) => {
+export const LoginScreen = ({ navigation }: LoginScreenProps) => {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,11 +44,13 @@ export const LoginScreen = ({ navigation }: any) => {
           keyboardShouldPersistTaps="handled"
         >
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backText}>←</Text>
+            <Ionicons name="chevron-back" size={22} color={COLORS.text} />
           </TouchableOpacity>
 
           <View style={styles.brandContainer}>
-            <Text style={styles.brandIcon}>☕</Text>
+            <View style={styles.brandIconContainer}>
+              <Ionicons name="cafe" size={40} color={COLORS.accent} />
+            </View>
             <Text style={styles.brandNome}>Café & Restaurante</Text>
             <Text style={styles.brandDesc}>Entre na sua conta para continuar</Text>
           </View>
@@ -54,7 +58,7 @@ export const LoginScreen = ({ navigation }: any) => {
           <View style={styles.formContainer}>
             <Text style={styles.inputLabel}>Email</Text>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputIcon}>✉️</Text>
+              <Ionicons name="mail-outline" size={18} color={COLORS.textMuted} />
               <TextInput
                 style={styles.input}
                 placeholder="seu@email.com"
@@ -69,7 +73,7 @@ export const LoginScreen = ({ navigation }: any) => {
 
             <Text style={styles.inputLabel}>Senha</Text>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputIcon}>🔒</Text>
+              <Ionicons name="lock-closed-outline" size={18} color={COLORS.textMuted} />
               <TextInput
                 style={styles.input}
                 placeholder="Sua senha"
@@ -78,8 +82,12 @@ export const LoginScreen = ({ navigation }: any) => {
                 onChangeText={setSenha}
                 secureTextEntry={!senhaVisivel}
               />
-              <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
-                <Text style={styles.eyeIcon}>{senhaVisivel ? '👁️' : '👁️‍🗨️'}</Text>
+              <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons
+                  name={senhaVisivel ? 'eye-outline' : 'eye-off-outline'}
+                  size={20}
+                  color={COLORS.textMuted}
+                />
               </TouchableOpacity>
             </View>
 
@@ -91,6 +99,7 @@ export const LoginScreen = ({ navigation }: any) => {
               style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
               onPress={handleLogin}
               disabled={loading}
+              activeOpacity={0.8}
             >
               {loading ? (
                 <ActivityIndicator color={COLORS.primary} />
@@ -107,11 +116,11 @@ export const LoginScreen = ({ navigation }: any) => {
 
             <View style={styles.socialRow}>
               <TouchableOpacity style={styles.socialBtn}>
-                <Text style={styles.socialIcon}>🔵</Text>
+                <Ionicons name="logo-google" size={20} color={COLORS.text} />
                 <Text style={styles.socialText}>Google</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.socialBtn}>
-                <Text style={styles.socialIcon}>🍎</Text>
+                <Ionicons name="logo-apple" size={20} color={COLORS.text} />
                 <Text style={styles.socialText}>Apple</Text>
               </TouchableOpacity>
             </View>
@@ -152,14 +161,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  backText: { fontSize: 22, color: COLORS.text },
 
   brandContainer: {
     alignItems: 'center',
     marginTop: 32,
     marginBottom: 40,
   },
-  brandIcon: { fontSize: 56, marginBottom: 16 },
+  brandIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    backgroundColor: COLORS.accentLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   brandNome: {
     fontSize: 26,
     fontWeight: 'bold',
@@ -188,14 +204,13 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     borderWidth: 1,
     borderColor: COLORS.border,
+    gap: 12,
   },
-  inputIcon: { fontSize: 16, marginRight: 12 },
   input: {
     flex: 1,
     fontSize: 15,
     color: COLORS.text,
   },
-  eyeIcon: { fontSize: 18, padding: 4 },
 
   forgotBtn: {
     alignSelf: 'flex-end',
@@ -254,7 +269,6 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     gap: 8,
   },
-  socialIcon: { fontSize: 20 },
   socialText: {
     fontSize: 14,
     color: COLORS.text,

@@ -3,10 +3,12 @@ import {
   StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
   TouchableOpacity, TextInput, KeyboardAvoidingView, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
 import { useAuth } from '../contexts/AuthContext';
+import type { RegisterScreenProps } from '../navigation/types';
 
-export const RegisterScreen = ({ navigation }: any) => {
+export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -33,7 +35,7 @@ export const RegisterScreen = ({ navigation }: any) => {
     setLoading(false);
 
     if (sucesso) {
-      Alert.alert('✅ Conta criada!', 'Bem-vindo ao Café & Restaurante!', [
+      Alert.alert('Conta criada!', 'Bem-vindo ao Café & Restaurante!', [
         { text: 'Continuar', onPress: () => navigation.goBack() },
       ]);
     } else {
@@ -54,7 +56,7 @@ export const RegisterScreen = ({ navigation }: any) => {
           keyboardShouldPersistTaps="handled"
         >
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backText}>←</Text>
+            <Ionicons name="chevron-back" size={22} color={COLORS.text} />
           </TouchableOpacity>
 
           <View style={styles.titleContainer}>
@@ -64,7 +66,7 @@ export const RegisterScreen = ({ navigation }: any) => {
 
           <Text style={styles.inputLabel}>Nome completo</Text>
           <View style={styles.inputContainer}>
-            <Text style={styles.inputIcon}>👤</Text>
+            <Ionicons name="person-outline" size={18} color={COLORS.textMuted} />
             <TextInput
               style={styles.input}
               placeholder="Seu nome"
@@ -77,7 +79,7 @@ export const RegisterScreen = ({ navigation }: any) => {
 
           <Text style={styles.inputLabel}>Email</Text>
           <View style={styles.inputContainer}>
-            <Text style={styles.inputIcon}>✉️</Text>
+            <Ionicons name="mail-outline" size={18} color={COLORS.textMuted} />
             <TextInput
               style={styles.input}
               placeholder="seu@email.com"
@@ -92,7 +94,7 @@ export const RegisterScreen = ({ navigation }: any) => {
 
           <Text style={styles.inputLabel}>Senha</Text>
           <View style={styles.inputContainer}>
-            <Text style={styles.inputIcon}>🔒</Text>
+            <Ionicons name="lock-closed-outline" size={18} color={COLORS.textMuted} />
             <TextInput
               style={styles.input}
               placeholder="Mínimo 6 caracteres"
@@ -105,7 +107,7 @@ export const RegisterScreen = ({ navigation }: any) => {
 
           <Text style={styles.inputLabel}>Confirmar senha</Text>
           <View style={styles.inputContainer}>
-            <Text style={styles.inputIcon}>🔒</Text>
+            <Ionicons name="lock-closed-outline" size={18} color={COLORS.textMuted} />
             <TextInput
               style={styles.input}
               placeholder="Repita a senha"
@@ -126,6 +128,7 @@ export const RegisterScreen = ({ navigation }: any) => {
             style={[styles.registerBtn, loading && styles.registerBtnDisabled]}
             onPress={handleRegister}
             disabled={loading}
+            activeOpacity={0.8}
           >
             {loading ? (
               <ActivityIndicator color={COLORS.primary} />
@@ -169,7 +172,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  backText: { fontSize: 22, color: COLORS.text },
 
   titleContainer: {
     marginTop: 24,
@@ -202,8 +204,8 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     borderWidth: 1,
     borderColor: COLORS.border,
+    gap: 12,
   },
-  inputIcon: { fontSize: 16, marginRight: 12 },
   input: {
     flex: 1,
     fontSize: 15,

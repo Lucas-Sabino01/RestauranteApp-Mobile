@@ -1,7 +1,9 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, Image, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
-import { Produto, formatarPreco } from '../data/mock';
+import type { Produto } from '../types';
+import { formatarPreco } from '../types';
 
 type Props = {
   produto: Produto;
@@ -26,7 +28,11 @@ export const ProductCard: React.FC<Props> = ({
         <Image source={{ uri: produto.imagem }} style={styles.verticalImagem} />
         {onToggleFavorito && (
           <TouchableOpacity style={styles.favoritoBotao} onPress={onToggleFavorito}>
-            <Text style={styles.favoritoIcone}>{isFavorito ? '❤️' : '🤍'}</Text>
+            <Ionicons
+              name={isFavorito ? 'heart' : 'heart-outline'}
+              size={18}
+              color={isFavorito ? COLORS.danger : COLORS.text}
+            />
           </TouchableOpacity>
         )}
         <View style={styles.verticalInfo}>
@@ -34,7 +40,7 @@ export const ProductCard: React.FC<Props> = ({
           <View style={styles.rodapeVertical}>
             <Text style={styles.preco}>{formatarPreco(produto.preco)}</Text>
             <View style={styles.avaliacaoContainer}>
-              <Text style={styles.estrela}>★</Text>
+              <Ionicons name="star" size={14} color={COLORS.star} />
               <Text style={styles.avaliacaoTexto}>{produto.avaliacao}</Text>
             </View>
           </View>
@@ -50,24 +56,31 @@ export const ProductCard: React.FC<Props> = ({
         <View style={styles.topoRow}>
           <Text style={styles.nome} numberOfLines={1}>{produto.nome}</Text>
           {onToggleFavorito && (
-            <TouchableOpacity onPress={onToggleFavorito}>
-              <Text>{isFavorito ? '❤️' : '🤍'}</Text>
+            <TouchableOpacity onPress={onToggleFavorito} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons
+                name={isFavorito ? 'heart' : 'heart-outline'}
+                size={20}
+                color={isFavorito ? COLORS.danger : COLORS.textMuted}
+              />
             </TouchableOpacity>
           )}
         </View>
         <Text style={styles.descricao} numberOfLines={2}>{produto.descricao}</Text>
         <View style={styles.metaRow}>
           <View style={styles.avaliacaoContainer}>
-            <Text style={styles.estrela}>★</Text>
+            <Ionicons name="star" size={14} color={COLORS.star} />
             <Text style={styles.avaliacaoTexto}>{produto.avaliacao}</Text>
           </View>
-          <Text style={styles.tempo}>🕐 {produto.tempo}</Text>
+          <View style={styles.tempoContainer}>
+            <Ionicons name="time-outline" size={14} color={COLORS.textMuted} />
+            <Text style={styles.tempo}>{produto.tempo}</Text>
+          </View>
         </View>
         <View style={styles.rodapeRow}>
           <Text style={styles.preco}>{formatarPreco(produto.preco)}</Text>
           {onAddToCart && (
             <TouchableOpacity style={styles.addBtn} onPress={onAddToCart}>
-              <Text style={styles.addBtnText}>+</Text>
+              <Ionicons name="add" size={22} color={COLORS.primary} />
             </TouchableOpacity>
           )}
         </View>
@@ -77,7 +90,6 @@ export const ProductCard: React.FC<Props> = ({
 };
 
 const styles = StyleSheet.create({
-
   verticalCard: {
     width: 170,
     backgroundColor: COLORS.card,
@@ -102,7 +114,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  favoritoIcone: { fontSize: 16 },
   verticalInfo: { padding: 14 },
   rodapeVertical: {
     flexDirection: 'row',
@@ -155,6 +166,11 @@ const styles = StyleSheet.create({
     marginTop: 6,
     gap: 12,
   },
+  tempoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   tempo: {
     fontSize: 12,
     color: COLORS.textMuted,
@@ -162,11 +178,7 @@ const styles = StyleSheet.create({
   avaliacaoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  estrela: {
-    color: COLORS.star,
-    fontSize: 14,
-    marginRight: 3,
+    gap: 3,
   },
   avaliacaoTexto: {
     fontSize: 13,
@@ -191,11 +203,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  addBtnText: {
-    color: COLORS.primary,
-    fontSize: 22,
-    fontWeight: 'bold',
-    lineHeight: 24,
   },
 });

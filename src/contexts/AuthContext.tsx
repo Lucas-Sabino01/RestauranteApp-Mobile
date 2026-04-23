@@ -1,54 +1,76 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Usuario } from '../data/mock';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import type { Usuario } from '../types';
+import { authService } from '../services/authService';
 
 type AuthContextType = {
   user: Usuario | null;
   isAuthenticated: boolean;
+  isInitializing: boolean;
+  loading: boolean;
   login: (email: string, senha: string) => Promise<boolean>;
   register: (nome: string, email: string, senha: string) => Promise<boolean>;
   logout: () => void;
 };
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth deve ser usado dentro de AuthProvider');
+  if (!context) {
+    throw new Error('useAuth deve ser usado dentro de AuthProvider');
+  }
   return context;
-};
-
-const USUARIO_MOCK: Usuario = {
-  id: '1',
-  nome: 'Lucas',
-  email: 'lucas@email.com',
-  avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<Usuario | null>(null);
-
-  const login = useCallback(async (email: string, _senha: string): Promise<boolean> => {
-
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    if (email.includes('@')) {
-      setUser({ ...USUARIO_MOCK, email });
-      return true;
-    }
-    return false;
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const storedUser = await authService.getStoredUser();
+        if (storedUser) {
+          setUser(storedUser);
+        }
+      } catch {
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+    checkAuth();
   }, []);
 
-  const register = useCallback(async (nome: string, email: string, _senha: string): Promise<boolean> => {
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    if (email.includes('@') && nome.length > 0) {
-      setUser({ ...USUARIO_MOCK, nome, email });
+  const login = useCallback(async (email: string, senha: string): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const { user: loggedUser } = await authService.login({ email, senha });
+      await authService.saveUserData(loggedUser);
+      setUser(loggedUser);
       return true;
+    } catch {
+      return false;
+    } finally {
+      setLoading(false);
     }
-    return false;
   }, []);
 
-  const logout = useCallback(() => {
+  const register = useCallback(async (nome: string, email: string, senha: string): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const { user: newUser } = await authService.register({ nome, email, senha });
+      await authService.saveUserData(newUser);
+      setUser(newUser);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    await authService.logout();
     setUser(null);
   }, []);
 
@@ -57,6 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         isAuthenticated: !!user,
+        isInitializing,
+        loading,
         login,
         register,
         logout,

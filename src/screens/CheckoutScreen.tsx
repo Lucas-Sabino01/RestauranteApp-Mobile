@@ -1,39 +1,43 @@
 import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
-  ScrollView, TouchableOpacity, Alert, Modal,
+  ScrollView, TouchableOpacity, Modal,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { COLORS } from '../theme/colors';
 import { useCart } from '../contexts/CartContext';
-import { formatarPreco, MULTIPLICADOR_TAMANHO, TAMANHO_LABELS } from '../data/mock';
+import { formatarPreco, MULTIPLICADOR_TAMANHO, TAMANHO_LABELS } from '../types';
 import { Header } from '../components/Header';
+import type { CheckoutScreenProps } from '../navigation/types';
 
-export const CheckoutScreen = ({ navigation }: any) => {
+export const CheckoutScreen = ({ navigation }: CheckoutScreenProps) => {
   const { items, totalPrice, totalPriceFormatted, clearCart } = useCart();
   const [enderecoSelecionado, setEnderecoSelecionado] = useState(0);
   const [pagamentoSelecionado, setPagamentoSelecionado] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const enderecos = [
-    { label: 'Casa', endereco: 'Rua das Flores, 123 - São Paulo, SP' },
-    { label: 'Trabalho', endereco: 'Av. Paulista, 1000 - São Paulo, SP' },
+    { label: 'Casa', endereco: 'Rua das Flores, 123 - Curitiba, PR' },
+    { label: 'Trabalho', endereco: 'Av. Sete de Setembro, 1000 - Curitiba, PR' },
   ];
 
   const pagamentos = [
-    { icone: '💳', label: 'Cartão de Crédito', info: '•••• 4321' },
-    { icone: '📱', label: 'Pix', info: 'Pagamento instantâneo' },
-    { icone: '💵', label: 'Dinheiro', info: 'Pague na entrega' },
+    { icone: 'card-outline' as const, label: 'Cartão de Crédito', info: '•••• 4321' },
+    { icone: 'phone-portrait-outline' as const, label: 'Pix', info: 'Pagamento instantâneo' },
+    { icone: 'cash-outline' as const, label: 'Dinheiro', info: 'Pague na entrega' },
   ];
 
   const taxaEntrega = 0;
   const totalFinal = totalPrice + taxaEntrega;
 
   const handleConfirmar = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setShowSuccess(true);
     setTimeout(() => {
       setShowSuccess(false);
       clearCart();
-      navigation.navigate('HomeTab');
+      (navigation as any).navigate('HomeTab');
     }, 3000);
   };
 
@@ -47,7 +51,10 @@ export const CheckoutScreen = ({ navigation }: any) => {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        <Text style={styles.secaoTitulo}>📍 Endereço de entrega</Text>
+        <View style={styles.secaoTituloRow}>
+          <Ionicons name="location" size={18} color={COLORS.accent} />
+          <Text style={styles.secaoTitulo}>Endereço de entrega</Text>
+        </View>
         {enderecos.map((end, i) => (
           <TouchableOpacity
             key={i}
@@ -64,7 +71,10 @@ export const CheckoutScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         ))}
 
-        <Text style={[styles.secaoTitulo, { marginTop: 24 }]}>💳 Método de pagamento</Text>
+        <View style={[styles.secaoTituloRow, { marginTop: 24 }]}>
+          <Ionicons name="card" size={18} color={COLORS.accent} />
+          <Text style={styles.secaoTitulo}>Método de pagamento</Text>
+        </View>
         {pagamentos.map((pag, i) => (
           <TouchableOpacity
             key={i}
@@ -74,7 +84,7 @@ export const CheckoutScreen = ({ navigation }: any) => {
             <View style={[styles.radio, pagamentoSelecionado === i && styles.radioAtivo]}>
               {pagamentoSelecionado === i && <View style={styles.radioInner} />}
             </View>
-            <Text style={styles.pagIcone}>{pag.icone}</Text>
+            <Ionicons name={pag.icone} size={22} color={COLORS.textSecondary} style={{ marginRight: 12 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.optionLabel}>{pag.label}</Text>
               <Text style={styles.optionInfo}>{pag.info}</Text>
@@ -82,7 +92,10 @@ export const CheckoutScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         ))}
 
-        <Text style={[styles.secaoTitulo, { marginTop: 24 }]}>📋 Resumo do pedido</Text>
+        <View style={[styles.secaoTituloRow, { marginTop: 24 }]}>
+          <Ionicons name="receipt" size={18} color={COLORS.accent} />
+          <Text style={styles.secaoTitulo}>Resumo do pedido</Text>
+        </View>
         <View style={styles.resumoCard}>
           {items.map((item, i) => (
             <View key={i} style={styles.resumoItem}>
@@ -113,7 +126,7 @@ export const CheckoutScreen = ({ navigation }: any) => {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.confirmarBtn} onPress={handleConfirmar}>
+        <TouchableOpacity style={styles.confirmarBtn} onPress={handleConfirmar} activeOpacity={0.8}>
           <Text style={styles.confirmarBtnText}>Confirmar Pedido • {formatarPreco(totalFinal)}</Text>
         </TouchableOpacity>
       </View>
@@ -121,7 +134,7 @@ export const CheckoutScreen = ({ navigation }: any) => {
       <Modal visible={showSuccess} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalIcon}>✅</Text>
+            <Ionicons name="checkmark-circle" size={64} color={COLORS.success} />
             <Text style={styles.modalTitulo}>Pedido Confirmado!</Text>
             <Text style={styles.modalDesc}>
               Seu pedido foi enviado para a cozinha.{'\n'}Tempo estimado: 15-25 min
@@ -147,11 +160,16 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
 
+  secaoTituloRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
   secaoTitulo: {
     fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.text,
-    marginBottom: 14,
   },
 
   optionCard: {
@@ -186,10 +204,6 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     backgroundColor: COLORS.accent,
-  },
-  pagIcone: {
-    fontSize: 22,
-    marginRight: 12,
   },
   optionLabel: {
     fontSize: 15,
@@ -285,12 +299,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  modalIcon: { fontSize: 56, marginBottom: 16 },
   modalTitulo: {
     fontSize: 22,
     fontWeight: 'bold',
     color: COLORS.text,
     marginBottom: 10,
+    marginTop: 16,
   },
   modalDesc: {
     fontSize: 14,
