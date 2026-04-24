@@ -1,6 +1,6 @@
 import api from './api';
 import * as SecureStore from 'expo-secure-store';
-import { ENV } from '../config/env.ts';
+import { ENV } from '../config/env';
 import type {
   AuthResponse,
   LoginRequest,
@@ -101,7 +101,8 @@ export const authService = {
       const userData = await SecureStore.getItemAsync(ENV.STORAGE_KEYS.USER_DATA);
       if (userData) return JSON.parse(userData);
       return null;
-    } catch {
+    } catch (err) {
+      console.warn('[AuthService] Erro ao recuperar usuário:', err);
       return null;
     }
   },

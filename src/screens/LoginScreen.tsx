@@ -11,18 +11,15 @@ import type { LoginScreenProps } from '../navigation/types';
 export const LoginScreen = ({ navigation }: LoginScreenProps) => {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [loading, setLoading] = useState(false);
   const [senhaVisivel, setSenhaVisivel] = useState(false);
-  const { login } = useAuth();
+  const { login, loading } = useAuth();
 
   const handleLogin = async () => {
     if (!email.trim() || !senha.trim()) {
       Alert.alert('Campos obrigatórios', 'Preencha email e senha.');
       return;
     }
-    setLoading(true);
     const sucesso = await login(email, senha);
-    setLoading(false);
 
     if (sucesso) {
       navigation.goBack();

@@ -7,13 +7,15 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Toast from 'react-native-toast-message';
 import { COLORS } from '../theme/colors';
+import { FONTS } from '../theme/fonts';
 import type { Produto, Tamanho } from '../types';
 import { formatarPreco, MULTIPLICADOR_TAMANHO, TAMANHO_LABELS } from '../types';
 import { useCart } from '../contexts/CartContext';
 import { Header } from '../components/Header';
+import type { AnyDetailScreenProps } from '../navigation/types';
 
 const { width } = Dimensions.get('window');
-export const DetailScreen = ({ route, navigation }: any) => {
+export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
   const { produto } = route.params as { produto: Produto };
   const [tamanho, setTamanho] = useState<Tamanho>('M');
   const [quantidade, setQuantidade] = useState(1);
@@ -223,6 +225,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.text,
     lineHeight: 32,
+    fontFamily: FONTS.bold,
   },
   avaliacaoBox: {
     flexDirection: 'row',
@@ -271,6 +274,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.text,
     marginBottom: 14,
+    fontFamily: FONTS.semiBold,
   },
 
   ingredientesContainer: {
@@ -394,5 +398,6 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: FONTS.bold,
   },
 });

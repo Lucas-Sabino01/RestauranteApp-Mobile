@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { ENV } from '../config/env.ts';
+import { ENV } from '../config/env';
 import type { ApiError } from '../types';
 
 const api = axios.create({
@@ -19,7 +19,8 @@ api.interceptors.request.use(
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-    } catch {
+    } catch (err) {
+      console.warn('[API] Erro ao injetar token:', err);
     }
     return config;
   },

@@ -33,7 +33,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (storedUser) {
           setUser(storedUser);
         }
-      } catch {
+      } catch (err) {
+        console.warn('[AuthContext] Erro ao verificar autenticação:', err);
       } finally {
         setIsInitializing(false);
       }
@@ -48,7 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await authService.saveUserData(loggedUser);
       setUser(loggedUser);
       return true;
-    } catch {
+    } catch (err) {
+      console.warn('[AuthContext] Erro no login:', err);
       return false;
     } finally {
       setLoading(false);
@@ -62,7 +64,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await authService.saveUserData(newUser);
       setUser(newUser);
       return true;
-    } catch {
+    } catch (err) {
+      console.warn('[AuthContext] Erro no registro:', err);
       return false;
     } finally {
       setLoading(false);

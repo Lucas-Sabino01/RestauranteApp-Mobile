@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { BottomTabScreenProps, BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
 import type { Produto } from '../types';
 
@@ -28,11 +28,13 @@ export type ProfileStackParamList = {
 };
 
 export type RootTabParamList = {
-  HomeTab: NavigatorScreenParams<HomeStackParamList>;
-  SearchTab: NavigatorScreenParams<SearchStackParamList>;
-  CartTab: NavigatorScreenParams<CartStackParamList>;
-  ProfileTab: NavigatorScreenParams<ProfileStackParamList>;
+  HomeTab: NavigatorScreenParams<HomeStackParamList> | undefined;
+  SearchTab: NavigatorScreenParams<SearchStackParamList> | undefined;
+  CartTab: NavigatorScreenParams<CartStackParamList> | undefined;
+  ProfileTab: NavigatorScreenParams<ProfileStackParamList> | undefined;
 };
+
+export type RootTabNavigationProp = BottomTabNavigationProp<RootTabParamList>;
 
 // Home Stack
 export type HomeScreenProps = CompositeScreenProps<
@@ -66,5 +68,15 @@ export type ProfileScreenProps = NativeStackScreenProps<ProfileStackParamList, '
 export type LoginScreenProps = NativeStackScreenProps<ProfileStackParamList, 'Login'>;
 export type RegisterScreenProps = NativeStackScreenProps<ProfileStackParamList, 'Register'>;
 export type OrdersScreenProps = NativeStackScreenProps<ProfileStackParamList, 'Orders'>;
-export type FavoritesScreenProps = NativeStackScreenProps<ProfileStackParamList, 'Favorites'>;
+
+export type FavoritesScreenProps = CompositeScreenProps<
+  NativeStackScreenProps<ProfileStackParamList, 'Favorites'>,
+  BottomTabScreenProps<RootTabParamList>
+>;
+
 export type FavoritesDetailScreenProps = NativeStackScreenProps<ProfileStackParamList, 'FavoritesDetail'>;
+
+export type AnyDetailScreenProps = {
+  route: { params: { produto: Produto } };
+  navigation: { goBack: () => void };
+};

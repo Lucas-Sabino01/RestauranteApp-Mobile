@@ -9,7 +9,7 @@ import { COLORS } from '../theme/colors';
 import { useCart } from '../contexts/CartContext';
 import { formatarPreco, MULTIPLICADOR_TAMANHO, TAMANHO_LABELS } from '../types';
 import { Header } from '../components/Header';
-import type { CheckoutScreenProps } from '../navigation/types';
+import type { CheckoutScreenProps, RootTabNavigationProp } from '../navigation/types';
 
 export const CheckoutScreen = ({ navigation }: CheckoutScreenProps) => {
   const { items, totalPrice, totalPriceFormatted, clearCart } = useCart();
@@ -37,7 +37,7 @@ export const CheckoutScreen = ({ navigation }: CheckoutScreenProps) => {
     setTimeout(() => {
       setShowSuccess(false);
       clearCart();
-      (navigation as any).navigate('HomeTab');
+      navigation.getParent<RootTabNavigationProp>()?.navigate('HomeTab');
     }, 3000);
   };
 

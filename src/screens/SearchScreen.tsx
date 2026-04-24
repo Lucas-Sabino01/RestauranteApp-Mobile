@@ -7,12 +7,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Toast from 'react-native-toast-message';
 import { COLORS } from '../theme/colors';
-import { useSearchProducts } from '../hooks/useProducts';
+import { useSearchProducts, useProducts } from '../hooks/useProducts';
 import { useCart } from '../contexts/CartContext';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { ProductCard } from '../components/ProductCard';
 import { ProductCardSkeleton } from '../components/ui/SkeletonLoader';
-import { PRODUTOS } from '../data/mock';
 import type { SearchScreenProps } from '../navigation/types';
 import type { Produto } from '../types';
 
@@ -23,8 +22,9 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
   const { addToCart } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { results, loading, search } = useSearchProducts();
+  const { products: allProducts } = useProducts();
 
-  const sugestoes = useMemo(() => PRODUTOS.slice(0, 4), []);
+  const sugestoes = useMemo(() => allProducts.slice(0, 4), [allProducts]);
 
   const handleSearch = useCallback((text: string) => {
     setTermo(text);

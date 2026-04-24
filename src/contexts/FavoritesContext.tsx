@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ENV } from '../config/env.ts';
+import { ENV } from '../config/env';
 
 type FavoritesContextType = {
   favorites: string[];
@@ -21,6 +21,7 @@ export const useFavorites = () => {
 
 export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
   useEffect(() => {
     const loadFavorites = async () => {
       try {
@@ -28,20 +29,25 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (stored) {
           setFavorites(JSON.parse(stored));
         }
-      } catch {
+      } catch (err) {
+        console.warn('[FavoritesContext] Erro ao carregar favoritos:', err);
+      } finally {
+        setIsLoaded(true);
       }
     };
     loadFavorites();
   }, []);
   useEffect(() => {
+    if (!isLoaded) return;
     const saveFavorites = async () => {
       try {
         await AsyncStorage.setItem(ENV.STORAGE_KEYS.FAVORITES, JSON.stringify(favorites));
-      } catch {
+      } catch (err) {
+        console.warn('[FavoritesContext] Erro ao salvar favoritos:', err);
       }
     };
     saveFavorites();
-  }, [favorites]);
+  }, [favorites, isLoaded]);
 
   const isFavorite = useCallback(
     (produtoId: string) => favorites.includes(produtoId),

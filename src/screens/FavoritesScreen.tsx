@@ -13,7 +13,7 @@ import { useProducts } from '../hooks/useProducts';
 import { ProductCard } from '../components/ProductCard';
 import { ProductCardSkeleton } from '../components/ui/SkeletonLoader';
 import { Header } from '../components/Header';
-import type { FavoritesScreenProps } from '../navigation/types';
+import type { FavoritesScreenProps, RootTabNavigationProp } from '../navigation/types';
 import type { Produto } from '../types';
 
 export const FavoritesScreen = ({ navigation }: FavoritesScreenProps) => {
@@ -67,7 +67,7 @@ export const FavoritesScreen = ({ navigation }: FavoritesScreenProps) => {
             </Text>
             <TouchableOpacity 
               style={styles.emptyBotao}
-              onPress={() => (navigation as any).navigate('HomeTab')}
+              onPress={() => navigation.getParent<RootTabNavigationProp>()?.navigate('HomeTab')}
             >
               <Text style={styles.emptyBotaoTexto}>Explorar cardápio</Text>
             </TouchableOpacity>

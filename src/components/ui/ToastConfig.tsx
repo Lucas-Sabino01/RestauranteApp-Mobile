@@ -39,9 +39,9 @@ const InfoToast: React.FC<ToastProps> = ({ text1, text2 }) => (
 );
 
 export const toastConfig = {
-  success: (props: any) => <SuccessToast text1={props.text1} text2={props.text2} />,
-  error: (props: any) => <ErrorToast text1={props.text1} text2={props.text2} />,
-  info: (props: any) => <InfoToast text1={props.text1} text2={props.text2} />,
+  success: (props: ToastProps) => <SuccessToast text1={props.text1} text2={props.text2} />,
+  error: (props: ToastProps) => <ErrorToast text1={props.text1} text2={props.text2} />,
+  info: (props: ToastProps) => <InfoToast text1={props.text1} text2={props.text2} />,
 };
 
 const styles = StyleSheet.create({

@@ -1,5 +1,5 @@
 import api from './api';
-import { ENV } from '../config/env.ts';
+import { ENV } from '../config/env';
 import type { Produto } from '../types';
 import { PRODUTOS } from '../data/mock';
 

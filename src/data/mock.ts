@@ -1,7 +1,4 @@
 import type { Categoria, Produto, Pedido, Usuario } from '../types';
-export type { Categoria, Produto, Pedido, Usuario } from '../types';
-export type { ItemCarrinho, Tamanho } from '../types';
-export { MULTIPLICADOR_TAMANHO, TAMANHO_LABELS, formatarPreco } from '../types';
 
 export const USUARIO_MOCK: Usuario = {
   id: '1',
@@ -234,22 +231,3 @@ export const PEDIDOS_MOCK: Pedido[] = [
     status: 'preparando',
   },
 ];
-
-export const getDestaques = (): Produto[] => {
-  return PRODUTOS.filter((p) => p.destaque);
-};
-
-export const getProdutosPorCategoria = (categoria: string): Produto[] => {
-  if (categoria === 'Tudo') return PRODUTOS;
-  return PRODUTOS.filter((p) => p.categoria === categoria);
-};
-
-export const buscarProdutos = (termo: string): Produto[] => {
-  const termoLower = termo.toLowerCase();
-  return PRODUTOS.filter(
-    (p) =>
-      p.nome.toLowerCase().includes(termoLower) ||
-      p.descricao.toLowerCase().includes(termoLower) ||
-      p.categoria.toLowerCase().includes(termoLower)
-  );
-};

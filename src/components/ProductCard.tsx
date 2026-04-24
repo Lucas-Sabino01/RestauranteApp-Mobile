@@ -2,6 +2,7 @@ import React from 'react';
 import { TouchableOpacity, Text, View, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
+import { FONTS } from '../theme/fonts';
 import type { Produto } from '../types';
 import { formatarPreco } from '../types';
 
@@ -153,6 +154,7 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     flex: 1,
     marginRight: 8,
+    fontFamily: FONTS.semiBold,
   },
   descricao: {
     fontSize: 12,
@@ -189,6 +191,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: COLORS.accent,
+    fontFamily: FONTS.bold,
   },
   rodapeRow: {
     flexDirection: 'row',

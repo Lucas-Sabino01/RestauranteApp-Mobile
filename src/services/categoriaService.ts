@@ -1,5 +1,5 @@
 import api from './api';
-import { ENV } from '../config/env.ts';
+import { ENV } from '../config/env';
 import type { Categoria } from '../types';
 import { CATEGORIAS } from '../data/mock';
 

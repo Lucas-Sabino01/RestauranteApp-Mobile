@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useMemo, useEf
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Produto, ItemCarrinho, Tamanho } from '../types';
 import { MULTIPLICADOR_TAMANHO, formatarPreco } from '../types';
-import { ENV } from '../config/env.ts';
+import { ENV } from '../config/env';
 
 type CartContextType = {
   items: ItemCarrinho[];
@@ -35,7 +35,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (stored) {
           setItems(JSON.parse(stored));
         }
-      } catch {
+      } catch (err) {
+        console.warn('[CartContext] Erro ao carregar carrinho:', err);
       } finally {
         setIsLoaded(true);
       }
@@ -47,7 +48,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const saveCart = async () => {
       try {
         await AsyncStorage.setItem(ENV.STORAGE_KEYS.CART_ITEMS, JSON.stringify(items));
-      } catch {
+      } catch (err) {
+        console.warn('[CartContext] Erro ao salvar carrinho:', err);
       }
     };
     saveCart();

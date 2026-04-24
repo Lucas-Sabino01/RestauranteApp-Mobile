@@ -1,7 +1,8 @@
 import api from './api';
-import { ENV } from '../config/env.ts';
+import { ENV } from '../config/env';
 import type { Pedido, CreatePedidoRequest } from '../types';
-import { PEDIDOS_MOCK } from '../data/mock';
+import { MULTIPLICADOR_TAMANHO } from '../types';
+import { PEDIDOS_MOCK, PRODUTOS } from '../data/mock';
 
 const pedidoApi = {
   listar: async (): Promise<Pedido[]> => {
@@ -35,15 +36,24 @@ const pedidoMock = {
 
   criar: async (payload: CreatePedidoRequest): Promise<Pedido> => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
+    const itens = payload.itens.map((item) => {
+      const produto = PRODUTOS.find((p) => p.id === item.produtoId);
+      return {
+        nome: produto?.nome || `Produto #${item.produtoId}`,
+        quantidade: item.quantidade,
+        tamanho: item.tamanho,
+        precoUnitario: produto ? produto.preco * MULTIPLICADOR_TAMANHO[item.tamanho] : 0,
+      };
+    });
+    const total = itens.reduce(
+      (sum, item) => sum + (item.precoUnitario || 0) * item.quantidade,
+      0
+    );
     const novoPedido: Pedido = {
       id: `PED${String(Date.now()).slice(-4)}`,
       data: new Date().toLocaleDateString('pt-BR'),
-      itens: payload.itens.map((item) => ({
-        nome: `Produto #${item.produtoId}`,
-        quantidade: item.quantidade,
-        tamanho: item.tamanho,
-      })),
-      total: 0,
+      itens,
+      total,
       status: 'preparando',
     };
     return novoPedido;

@@ -13,8 +13,7 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, loading } = useAuth();
 
   const handleRegister = async () => {
     if (!nome.trim() || !email.trim() || !senha.trim()) {
@@ -30,9 +29,7 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
       return;
     }
 
-    setLoading(true);
     const sucesso = await register(nome, email, senha);
-    setLoading(false);
 
     if (sucesso) {
       Alert.alert('Conta criada!', 'Bem-vindo ao Café & Restaurante!', [

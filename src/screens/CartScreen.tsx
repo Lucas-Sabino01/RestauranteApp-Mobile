@@ -9,7 +9,7 @@ import { COLORS } from '../theme/colors';
 import { formatarPreco, MULTIPLICADOR_TAMANHO, TAMANHO_LABELS } from '../types';
 import { useCart } from '../contexts/CartContext';
 import { Header } from '../components/Header';
-import type { CartScreenProps } from '../navigation/types';
+import type { CartScreenProps, RootTabNavigationProp } from '../navigation/types';
 
 export const CartScreen = ({ navigation }: CartScreenProps) => {
   const { items, updateQuantity, removeFromCart, clearCart, totalPriceFormatted, totalItems } = useCart();
@@ -51,7 +51,7 @@ export const CartScreen = ({ navigation }: CartScreenProps) => {
           <Text style={styles.emptyDesc}>Adicione delícias do nosso cardápio!</Text>
           <TouchableOpacity
             style={styles.emptyBotao}
-            onPress={() => (navigation as any).navigate('HomeTab')}
+            onPress={() => navigation.getParent<RootTabNavigationProp>()?.navigate('HomeTab')}
           >
             <Text style={styles.emptyBotaoTexto}>Explorar cardápio</Text>
           </TouchableOpacity>

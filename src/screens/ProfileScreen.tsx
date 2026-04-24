@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme/colors';
+import { FONTS } from '../theme/fonts';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavorites } from '../contexts/FavoritesContext';
 import type { ProfileScreenProps } from '../navigation/types';
@@ -183,6 +184,7 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginTop: 20,
     marginBottom: 24,
+    fontFamily: FONTS.bold,
   },
 
   userCard: {
@@ -211,6 +213,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.text,
     marginBottom: 4,
+    fontFamily: FONTS.semiBold,
   },
   userEmail: {
     fontSize: 14,

@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Toast from 'react-native-toast-message';
 import { COLORS } from '../theme/colors';
+import { FONTS } from '../theme/fonts';
 import { formatarPreco } from '../types';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,6 +18,7 @@ import { CategoryButton } from '../components/CategoryButton';
 import { ProductCard } from '../components/ProductCard';
 import { ProductCardSkeleton, ProductCardVerticalSkeleton } from '../components/ui/SkeletonLoader';
 import type { HomeScreenProps } from '../navigation/types';
+import type { RootTabNavigationProp } from '../navigation/types';
 import type { Produto } from '../types';
 
 export const HomeScreen = ({ navigation }: HomeScreenProps) => {
@@ -74,7 +76,7 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
         </View>
         <TouchableOpacity
           style={styles.avatarContainer}
-          onPress={() => (navigation as any).navigate('ProfileTab')}
+          onPress={() => navigation.getParent<RootTabNavigationProp>()?.navigate('ProfileTab')}
         >
           <Image
             source={{ uri: user?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg' }}
@@ -85,7 +87,7 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
       <TouchableOpacity
         style={styles.searchContainer}
         activeOpacity={0.7}
-        onPress={() => (navigation as any).navigate('SearchTab')}
+        onPress={() => navigation.getParent<RootTabNavigationProp>()?.navigate('SearchTab')}
       >
         <Ionicons name="search" size={18} color={COLORS.textMuted} />
         <Text style={styles.searchPlaceholder}>Pesquisar café, lanche...</Text>
@@ -225,12 +227,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textSecondary,
     marginBottom: 4,
+    fontFamily: FONTS.regular,
   },
   titulo: {
     fontSize: 26,
     fontWeight: 'bold',
     color: COLORS.text,
     lineHeight: 34,
+    fontFamily: FONTS.bold,
   },
   avatarContainer: { position: 'relative' },
   avatar: {
@@ -338,6 +342,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.text,
+    fontFamily: FONTS.semiBold,
   },
   destaquesScroll: {
     paddingBottom: 4,
