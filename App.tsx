@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import { 
   useFonts,
@@ -9,14 +10,34 @@ import {
   Poppins_700Bold 
 } from '@expo-google-fonts/poppins';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
-import { CartProvider } from './src/contexts/CartContext';
 import { FavoritesProvider } from './src/contexts/FavoritesContext';
+import { LocationProvider } from './src/contexts/LocationContext';
+import { ThemeProvider } from './src/contexts/ThemeContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
+import * as Notifications from 'expo-notifications';
+import { SplashScreen } from './src/components/SplashScreen';
+import { OnboardingScreen, ONBOARDING_KEY } from './src/screens/OnboardingScreen';
 import { toastConfig } from './src/components/ui/ToastConfig';
-import { COLORS } from './src/theme/colors';
+import { useTheme } from './src/contexts/ThemeContext';
+import type { ThemeColors } from './src/theme/colors';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+    priority: Notifications.AndroidNotificationPriority.HIGH,
+  }),
+});
 
 function AppContent() {
+  const { colors } = useTheme();
+
   const { isInitializing } = useAuth();
+  const [splashDone, setSplashDone] = useState(false);
+  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -24,26 +45,44 @@ function AppContent() {
     Poppins_700Bold,
   });
 
-  if (isInitializing || !fontsLoaded) {
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_KEY).then((value) => {
+      setOnboardingDone(value === 'true');
+    });
+  }, []);
+
+  if (isInitializing || !fontsLoaded || onboardingDone === null) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.primary }}>
-        <ActivityIndicator size="large" color={COLORS.accent} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primary }}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
 
-  return <AppNavigator />;
+  if (!onboardingDone) {
+    return <OnboardingScreen onFinish={() => setOnboardingDone(true)} />;
+  }
+
+  return (
+    <View style={{ flex: 1 }}>
+      <AppNavigator />
+      {!splashDone && <SplashScreen onFinish={() => setSplashDone(true)} />}
+    </View>
+  );
 }
 
 export default function App() {
+
   return (
-    <AuthProvider>
-      <CartProvider>
-        <FavoritesProvider>
-          <AppContent />
-          <Toast config={toastConfig} />
-        </FavoritesProvider>
-      </CartProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <LocationProvider>
+          <FavoritesProvider>
+            <AppContent />
+            <Toast config={toastConfig} />
+          </FavoritesProvider>
+        </LocationProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

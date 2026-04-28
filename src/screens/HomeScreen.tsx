@@ -1,78 +1,74 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
   FlatList, ScrollView, Image, TouchableOpacity, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import Toast from 'react-native-toast-message';
-import { COLORS } from '../theme/colors';
+import { useTheme } from '../contexts/ThemeContext';
+import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
-import { formatarPreco } from '../types';
-import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavorites } from '../contexts/FavoritesContext';
-import { useProducts, useDestaques } from '../hooks/useProducts';
+import { useEstabelecimentos, useDestaques } from '../hooks/useEstabelecimentos';
 import { useCategories } from '../hooks/useCategories';
 import { CategoryButton } from '../components/CategoryButton';
-import { ProductCard } from '../components/ProductCard';
-import { ProductCardSkeleton, ProductCardVerticalSkeleton } from '../components/ui/SkeletonLoader';
+import { EstablishmentCard } from '../components/EstablishmentCard';
+import { RestaurantOfWeek } from '../components/RestaurantOfWeek';
+import { EventCard } from '../components/EventCard';
+import { EstablishmentCardSkeleton, EstablishmentCardVerticalSkeleton } from '../components/ui/SkeletonLoader';
+import { EVENTOS_MOCK } from '../data/mock';
 import type { HomeScreenProps } from '../navigation/types';
 import type { RootTabNavigationProp } from '../navigation/types';
-import type { Produto } from '../types';
+import type { Estabelecimento } from '../types';
 
 export const HomeScreen = ({ navigation }: HomeScreenProps) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+
   const [categoriaAtiva, setCategoriaAtiva] = useState('Tudo');
-  const { addToCart } = useCart();
   const { user } = useAuth();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { categories } = useCategories();
-  const { products, loading: productsLoading, refetch: refetchProducts } = useProducts(categoriaAtiva);
-  const { products: destaques, loading: destaquesLoading } = useDestaques();
+  const { estabelecimentos, loading: listLoading, refetch } = useEstabelecimentos(categoriaAtiva);
+  const { estabelecimentos: destaques, loading: destaquesLoading } = useDestaques();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    refetchProducts();
+    refetch();
     setTimeout(() => setRefreshing(false), 600);
-  }, [refetchProducts]);
-
-  const handleAddToCart = useCallback((produto: Produto) => {
-    addToCart(produto, 1, 'M');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Toast.show({
-      type: 'success',
-      text1: 'Adicionado ao carrinho',
-      text2: `${produto.nome} (Médio)`,
-      visibilityTime: 2000,
-    });
-  }, [addToCart]);
+  }, [refetch]);
 
   const nomeUsuario = user?.nome || 'Visitante';
   const hora = new Date().getHours();
   const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
 
-  const renderProduct = useCallback(({ item }: { item: Produto }) => (
-    <ProductCard
-      produto={item}
+  const restauranteDaSemana = useMemo(
+    () => destaques.find((e) => e.avaliacao >= 4.8) || destaques[0],
+    [destaques]
+  );
+
+  const renderEstabelecimento = useCallback(({ item, index }: { item: Estabelecimento; index: number }) => (
+    <EstablishmentCard
+      estabelecimento={item}
       variant="horizontal"
       isFavorito={isFavorite(item.id)}
       onToggleFavorito={() => toggleFavorite(item.id)}
-      onAddToCart={() => handleAddToCart(item)}
-      onPress={() => navigation.navigate('Detail', { produto: item })}
+      onPress={() => navigation.navigate('Detail', { estabelecimento: item })}
+      index={index}
     />
-  ), [isFavorite, toggleFavorite, handleAddToCart, navigation]);
+  ), [isFavorite, toggleFavorite, navigation]);
 
   const ListHeader = () => (
     <>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.locationRow}>
-            <Ionicons name="location" size={14} color={COLORS.accent} />
+            <Ionicons name="location" size={14} color={colors.accent} />
             <Text style={styles.headerLocal}>Curitiba, PR</Text>
           </View>
           <Text style={styles.saudacao}>{saudacao}, {nomeUsuario}!</Text>
-          <Text style={styles.titulo}>O que vamos{'\n'}pedir hoje? ☕</Text>
+          <Text style={styles.titulo}>Descubra os{'\n'}melhores lugares 🏙️</Text>
         </View>
         <TouchableOpacity
           style={styles.avatarContainer}
@@ -89,24 +85,20 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
         activeOpacity={0.7}
         onPress={() => navigation.getParent<RootTabNavigationProp>()?.navigate('SearchTab')}
       >
-        <Ionicons name="search" size={18} color={COLORS.textMuted} />
-        <Text style={styles.searchPlaceholder}>Pesquisar café, lanche...</Text>
+        <Ionicons name="search" size={18} color={colors.textMuted} />
+        <Text style={styles.searchPlaceholder}>Buscar restaurante, café, bairro...</Text>
         <View style={styles.filterButton}>
-          <Ionicons name="options-outline" size={18} color={COLORS.primary} />
+          <Ionicons name="options-outline" size={18} color={colors.primary} />
         </View>
       </TouchableOpacity>
       <View style={styles.bannerContainer}>
         <View style={styles.bannerGradient}>
           <View style={styles.bannerContent}>
             <View style={styles.bannerBadge}>
-              <Text style={styles.bannerBadgeText}>OFERTA ESPECIAL</Text>
+              <Text style={styles.bannerBadgeText}>GUIA CURITIBA</Text>
             </View>
-            <Text style={styles.bannerTitulo}>Compre 1{'\n'}Leve 2!</Text>
-            <Text style={styles.bannerDesc}>Em todos os cappuccinos{'\n'}até sexta-feira</Text>
-            <TouchableOpacity style={styles.bannerBotao} activeOpacity={0.8}>
-              <Text style={styles.bannerBotaoTexto}>Pedir agora</Text>
-              <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
-            </TouchableOpacity>
+            <Text style={styles.bannerTitulo}>Explore os{'\n'}sabores da cidade</Text>
+            <Text style={styles.bannerDesc}>Cafeterias, restaurantes{'\n'}e muito mais para você</Text>
           </View>
           <Image
             source={{ uri: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=300&q=80' }}
@@ -114,6 +106,21 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
           />
         </View>
       </View>
+      {!destaquesLoading && restauranteDaSemana && (
+        <>
+          <View style={styles.secaoHeader}>
+            <View style={styles.secaoTituloRow}>
+              <Ionicons name="trophy" size={20} color={colors.star} />
+              <Text style={styles.secaoTitulo}>Destaque da Semana</Text>
+            </View>
+          </View>
+          <RestaurantOfWeek
+            estabelecimento={restauranteDaSemana}
+            onPress={() => navigation.navigate('Detail', { estabelecimento: restauranteDaSemana })}
+          />
+        </>
+      )}
+
       <View style={styles.categoriasContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {categories.map((cat) => (
@@ -128,14 +135,14 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
       </View>
       <View style={styles.secaoHeader}>
         <View style={styles.secaoTituloRow}>
-          <Ionicons name="flame" size={20} color={COLORS.accent} />
-          <Text style={styles.secaoTitulo}>Destaques</Text>
+          <Ionicons name="flame" size={20} color={colors.accent} />
+          <Text style={styles.secaoTitulo}>Em Destaque</Text>
         </View>
       </View>
 
       {destaquesLoading ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.destaquesScroll}>
-          {[1, 2, 3].map((i) => <ProductCardVerticalSkeleton key={i} />)}
+          {[1, 2, 3].map((i) => <EstablishmentCardVerticalSkeleton key={i} />)}
         </ScrollView>
       ) : (
         <ScrollView
@@ -144,26 +151,53 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
           contentContainerStyle={styles.destaquesScroll}
         >
           {destaques.map((item) => (
-            <ProductCard
+            <EstablishmentCard
               key={item.id}
-              produto={item}
+              estabelecimento={item}
               variant="vertical"
               isFavorito={isFavorite(item.id)}
               onToggleFavorito={() => toggleFavorite(item.id)}
-              onPress={() => navigation.navigate('Detail', { produto: item })}
+              onPress={() => navigation.navigate('Detail', { estabelecimento: item })}
             />
           ))}
         </ScrollView>
       )}
+      {EVENTOS_MOCK.length > 0 && (
+        <>
+          <View style={styles.secaoHeader}>
+            <View style={styles.secaoTituloRow}>
+              <Ionicons name="calendar" size={20} color={colors.accent} />
+              <Text style={styles.secaoTitulo}>Acontecendo</Text>
+            </View>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.destaquesScroll}
+          >
+            {EVENTOS_MOCK.map((evento) => (
+              <EventCard
+                key={evento.id}
+                evento={evento}
+                onPress={() => {
+                  const estab = estabelecimentos.find((e) => e.id === evento.estabelecimentoId);
+                  if (estab) navigation.navigate('Detail', { estabelecimento: estab });
+                }}
+              />
+            ))}
+          </ScrollView>
+        </>
+      )}
+
       <View style={styles.secaoHeader}>
         <View style={styles.secaoTituloRow}>
-          <Ionicons name="restaurant" size={20} color={COLORS.accent} />
-          <Text style={styles.secaoTitulo}>Cardápio</Text>
+          <Ionicons name="compass" size={20} color={colors.accent} />
+          <Text style={styles.secaoTitulo}>Explorar</Text>
         </View>
       </View>
-      {productsLoading && (
+      {listLoading && (
         <View>
-          {[1, 2, 3].map((i) => <ProductCardSkeleton key={i} />)}
+          {[1, 2, 3].map((i) => <EstablishmentCardSkeleton key={i} />)}
         </View>
       )}
     </>
@@ -171,11 +205,11 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
       <FlatList
-        data={productsLoading ? [] : products}
-        renderItem={renderProduct}
+        data={listLoading ? [] : estabelecimentos}
+        renderItem={renderEstabelecimento}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={ListHeader}
         contentContainerStyle={styles.scrollContainer}
@@ -185,8 +219,8 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={COLORS.accent}
-            colors={[COLORS.accent]}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
           />
         }
       />
@@ -194,10 +228,10 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   scrollContainer: {
@@ -219,20 +253,20 @@ const styles = StyleSheet.create({
   },
   headerLocal: {
     fontSize: 12,
-    color: COLORS.accent,
+    color: colors.accent,
     fontWeight: '600',
     letterSpacing: 0.5,
   },
   saudacao: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 4,
     fontFamily: FONTS.regular,
   },
   titulo: {
     fontSize: 26,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: colors.text,
     lineHeight: 34,
     fontFamily: FONTS.bold,
   },
@@ -242,26 +276,26 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 26,
     borderWidth: 2,
-    borderColor: COLORS.accent,
+    borderColor: colors.accent,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 52,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     gap: 10,
   },
-  searchPlaceholder: { flex: 1, fontSize: 15, color: COLORS.textMuted },
+  searchPlaceholder: { flex: 1, fontSize: 15, color: colors.textMuted },
   filterButton: {
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -272,14 +306,14 @@ const styles = StyleSheet.create({
   },
   bannerGradient: {
     flexDirection: 'row',
-    backgroundColor: COLORS.brown,
+    backgroundColor: colors.brown,
     padding: 20,
     borderRadius: 20,
     minHeight: 160,
   },
   bannerContent: { flex: 1, justifyContent: 'center' },
   bannerBadge: {
-    backgroundColor: COLORS.accentLight,
+    backgroundColor: colors.accentLight,
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -287,7 +321,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   bannerBadgeText: {
-    color: COLORS.accent,
+    color: colors.accent,
     fontSize: 10,
     fontWeight: 'bold',
     letterSpacing: 1,
@@ -295,30 +329,15 @@ const styles = StyleSheet.create({
   bannerTitulo: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: colors.text,
     lineHeight: 30,
     marginBottom: 6,
   },
   bannerDesc: {
     fontSize: 13,
-    color: COLORS.textWarm,
+    color: colors.textWarm,
     lineHeight: 18,
     marginBottom: 12,
-  },
-  bannerBotao: {
-    backgroundColor: COLORS.accent,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 25,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  bannerBotaoTexto: {
-    color: COLORS.primary,
-    fontWeight: 'bold',
-    fontSize: 13,
   },
   bannerImagem: {
     width: 110,
@@ -341,7 +360,7 @@ const styles = StyleSheet.create({
   secaoTitulo: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: colors.text,
     fontFamily: FONTS.semiBold,
   },
   destaquesScroll: {

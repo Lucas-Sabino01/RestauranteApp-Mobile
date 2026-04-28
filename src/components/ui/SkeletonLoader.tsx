@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet, ViewStyle } from 'react-native';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../contexts/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 
 type Props = {
   width: number | string;
@@ -15,6 +16,8 @@ export const SkeletonLoader: React.FC<Props> = ({
   borderRadius = 8,
   style,
 }) => {
+  const { colors } = useTheme();
+
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -43,7 +46,7 @@ export const SkeletonLoader: React.FC<Props> = ({
           width: width as any,
           height,
           borderRadius,
-          backgroundColor: COLORS.cardLight,
+          backgroundColor: colors.cardLight,
           opacity,
         },
         style,
@@ -52,62 +55,74 @@ export const SkeletonLoader: React.FC<Props> = ({
   );
 };
 
-export const ProductCardSkeleton: React.FC = () => (
-  <View style={skeletonStyles.horizontalCard}>
-    <SkeletonLoader width={100} height={100} borderRadius={14} />
-    <View style={skeletonStyles.info}>
-      <SkeletonLoader width="70%" height={16} borderRadius={4} />
-      <SkeletonLoader width="100%" height={12} borderRadius={4} style={{ marginTop: 8 }} />
-      <SkeletonLoader width="40%" height={12} borderRadius={4} style={{ marginTop: 6 }} />
-      <View style={skeletonStyles.row}>
-        <SkeletonLoader width={80} height={18} borderRadius={4} />
-        <SkeletonLoader width={34} height={34} borderRadius={12} />
+export const EstablishmentCardSkeleton: React.FC = () => {
+  const { colors } = useTheme();
+  const styles = getSkeletonStyles(colors);
+  return (
+    <View style={styles.horizontalCard}>
+      <SkeletonLoader width={110} height={130} borderRadius={0} />
+      <View style={styles.info}>
+        <SkeletonLoader width="80%" height={16} borderRadius={4} />
+        <SkeletonLoader width="50%" height={12} borderRadius={4} style={{ marginTop: 6 }} />
+        <View style={[styles.row, { marginTop: 8 }]}>
+          <SkeletonLoader width={70} height={14} borderRadius={4} />
+          <SkeletonLoader width={80} height={14} borderRadius={4} />
+        </View>
+        <View style={[styles.row, { marginTop: 8 }]}>
+          <SkeletonLoader width={55} height={20} borderRadius={8} />
+          <SkeletonLoader width={55} height={20} borderRadius={8} />
+          <SkeletonLoader width={55} height={20} borderRadius={8} />
+        </View>
       </View>
     </View>
-  </View>
-);
+  );
+};
 
-export const ProductCardVerticalSkeleton: React.FC = () => (
-  <View style={skeletonStyles.verticalCard}>
-    <SkeletonLoader width={170} height={140} borderRadius={0} />
-    <View style={{ padding: 14 }}>
-      <SkeletonLoader width="80%" height={14} borderRadius={4} />
-      <View style={[skeletonStyles.row, { marginTop: 10 }]}>
-        <SkeletonLoader width={70} height={16} borderRadius={4} />
-        <SkeletonLoader width={40} height={14} borderRadius={4} />
+export const EstablishmentCardVerticalSkeleton: React.FC = () => {
+  const { colors } = useTheme();
+  const styles = getSkeletonStyles(colors);
+  return (
+    <View style={styles.verticalCard}>
+      <SkeletonLoader width={180} height={120} borderRadius={0} />
+      <View style={{ padding: 12 }}>
+        <SkeletonLoader width="80%" height={14} borderRadius={4} />
+        <SkeletonLoader width="50%" height={11} borderRadius={4} style={{ marginTop: 6 }} />
+        <View style={[styles.row, { marginTop: 8 }]}>
+          <SkeletonLoader width={50} height={13} borderRadius={4} />
+          <SkeletonLoader width={70} height={13} borderRadius={4} />
+        </View>
       </View>
     </View>
-  </View>
-);
+  );
+};
 
-const skeletonStyles = StyleSheet.create({
+const getSkeletonStyles = (colors: ThemeColors) => StyleSheet.create({
   horizontalCard: {
     flexDirection: 'row',
-    backgroundColor: COLORS.card,
-    borderRadius: 18,
-    padding: 14,
+    backgroundColor: colors.card,
+    borderRadius: 16,
     marginBottom: 14,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   info: {
     flex: 1,
-    marginLeft: 14,
-    justifyContent: 'space-between',
+    padding: 14,
+    justifyContent: 'center',
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
   },
   verticalCard: {
-    width: 170,
-    backgroundColor: COLORS.card,
-    borderRadius: 20,
-    marginRight: 16,
+    width: 180,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    marginRight: 14,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
 });

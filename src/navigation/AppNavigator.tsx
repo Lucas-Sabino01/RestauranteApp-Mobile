@@ -1,35 +1,33 @@
 import React from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../theme/colors';
-import { useCart } from '../contexts/CartContext';
+import { useTheme } from '../contexts/ThemeContext';
+import type { ThemeColors } from '../theme/colors';
 
 import type {
   RootTabParamList,
   HomeStackParamList,
   SearchStackParamList,
-  CartStackParamList,
+  MapStackParamList,
   ProfileStackParamList,
 } from './types';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { DetailScreen } from '../screens/DetailScreen';
-import { CartScreen } from '../screens/CartScreen';
 import { SearchScreen } from '../screens/SearchScreen';
+import { MapScreen } from '../screens/MapScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
-import { CheckoutScreen } from '../screens/CheckoutScreen';
-import { OrdersScreen } from '../screens/OrdersScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SearchStack = createNativeStackNavigator<SearchStackParamList>();
-const CartStack = createNativeStackNavigator<CartStackParamList>();
+const MapStack = createNativeStackNavigator<MapStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 
 function HomeStackNavigator() {
@@ -50,12 +48,11 @@ function SearchStackNavigator() {
   );
 }
 
-function CartStackNavigator() {
+function MapStackNavigator() {
   return (
-    <CartStack.Navigator screenOptions={{ headerShown: false }}>
-      <CartStack.Screen name="Cart" component={CartScreen} />
-      <CartStack.Screen name="Checkout" component={CheckoutScreen} />
-    </CartStack.Navigator>
+    <MapStack.Navigator screenOptions={{ headerShown: false }}>
+      <MapStack.Screen name="Map" component={MapScreen} />
+    </MapStack.Navigator>
   );
 }
 
@@ -65,63 +62,32 @@ function ProfileStackNavigator() {
       <ProfileStack.Screen name="Profile" component={ProfileScreen} />
       <ProfileStack.Screen name="Login" component={LoginScreen} />
       <ProfileStack.Screen name="Register" component={RegisterScreen} />
-      <ProfileStack.Screen name="Orders" component={OrdersScreen} />
       <ProfileStack.Screen name="Favorites" component={FavoritesScreen} />
       <ProfileStack.Screen name="FavoritesDetail" component={DetailScreen} />
     </ProfileStack.Navigator>
   );
 }
 
-const CartTabBadge: React.FC<{ count: number }> = ({ count }) => {
-  if (count <= 0) return null;
-  return (
-    <View style={badgeStyles.badge}>
-      <Text style={badgeStyles.text}>{count > 99 ? '99+' : count}</Text>
-    </View>
-  );
-};
-
-const badgeStyles = StyleSheet.create({
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -12,
-    backgroundColor: COLORS.danger,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  text: {
-    color: COLORS.white,
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-});
-
 type TabIconProps = {
   iconName: keyof typeof Ionicons.glyphMap;
   iconNameFocused: keyof typeof Ionicons.glyphMap;
   focused: boolean;
-  badge?: number;
+  colors: ThemeColors;
 };
 
-const TabIcon: React.FC<TabIconProps> = ({ iconName, iconNameFocused, focused, badge }) => (
+const TabIcon: React.FC<TabIconProps> = ({ iconName, iconNameFocused, focused, colors }) => (
   <View style={{ alignItems: 'center', position: 'relative' }}>
     <Ionicons
       name={focused ? iconNameFocused : iconName}
       size={24}
-      color={focused ? COLORS.accent : COLORS.textMuted}
+      color={focused ? colors.accent : colors.textMuted}
     />
-    {badge !== undefined && <CartTabBadge count={badge} />}
     {focused && (
       <View
         style={{
           width: 20,
           height: 3,
-          backgroundColor: COLORS.accent,
+          backgroundColor: colors.accent,
           borderRadius: 2,
           marginTop: 4,
         }}
@@ -131,7 +97,7 @@ const TabIcon: React.FC<TabIconProps> = ({ iconName, iconNameFocused, focused, b
 );
 
 export const AppNavigator = () => {
-  const { totalItems } = useCart();
+  const { colors } = useTheme();
 
   return (
     <NavigationContainer>
@@ -139,15 +105,15 @@ export const AppNavigator = () => {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: COLORS.card,
-            borderTopColor: COLORS.border,
+            backgroundColor: colors.card,
+            borderTopColor: colors.border,
             borderTopWidth: 1,
             height: 70,
             paddingBottom: 10,
             paddingTop: 8,
           },
-          tabBarActiveTintColor: COLORS.accent,
-          tabBarInactiveTintColor: COLORS.textMuted,
+          tabBarActiveTintColor: colors.accent,
+          tabBarInactiveTintColor: colors.textMuted,
           tabBarLabelStyle: {
             fontSize: 11,
             fontWeight: '600',
@@ -160,7 +126,7 @@ export const AppNavigator = () => {
           options={{
             tabBarLabel: 'Início',
             tabBarIcon: ({ focused }) => (
-              <TabIcon iconName="home-outline" iconNameFocused="home" focused={focused} />
+              <TabIcon iconName="home-outline" iconNameFocused="home" focused={focused} colors={colors} />
             ),
           }}
         />
@@ -170,22 +136,17 @@ export const AppNavigator = () => {
           options={{
             tabBarLabel: 'Buscar',
             tabBarIcon: ({ focused }) => (
-              <TabIcon iconName="search-outline" iconNameFocused="search" focused={focused} />
+              <TabIcon iconName="search-outline" iconNameFocused="search" focused={focused} colors={colors} />
             ),
           }}
         />
         <Tab.Screen
-          name="CartTab"
-          component={CartStackNavigator}
+          name="MapTab"
+          component={MapStackNavigator}
           options={{
-            tabBarLabel: 'Carrinho',
+            tabBarLabel: 'Mapa',
             tabBarIcon: ({ focused }) => (
-              <TabIcon
-                iconName="cart-outline"
-                iconNameFocused="cart"
-                focused={focused}
-                badge={totalItems}
-              />
+              <TabIcon iconName="map-outline" iconNameFocused="map" focused={focused} colors={colors} />
             ),
           }}
         />
@@ -195,7 +156,7 @@ export const AppNavigator = () => {
           options={{
             tabBarLabel: 'Perfil',
             tabBarIcon: ({ focused }) => (
-              <TabIcon iconName="person-outline" iconNameFocused="person" focused={focused} />
+              <TabIcon iconName="person-outline" iconNameFocused="person" focused={focused} colors={colors} />
             ),
           }}
         />

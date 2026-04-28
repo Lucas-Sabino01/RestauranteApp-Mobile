@@ -4,11 +4,15 @@ import {
   TouchableOpacity, TextInput, KeyboardAvoidingView, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../theme/colors';
+import { useTheme } from '../contexts/ThemeContext';
+import type { ThemeColors } from '../theme/colors';
 import { useAuth } from '../contexts/AuthContext';
 import type { RegisterScreenProps } from '../navigation/types';
 
 export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -42,7 +46,7 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -53,7 +57,7 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
           keyboardShouldPersistTaps="handled"
         >
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="chevron-back" size={22} color={COLORS.text} />
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
           </TouchableOpacity>
 
           <View style={styles.titleContainer}>
@@ -63,11 +67,11 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
 
           <Text style={styles.inputLabel}>Nome completo</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="person-outline" size={18} color={COLORS.textMuted} />
+            <Ionicons name="person-outline" size={18} color={colors.textMuted} />
             <TextInput
               style={styles.input}
               placeholder="Seu nome"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={nome}
               onChangeText={setNome}
               autoCapitalize="words"
@@ -76,11 +80,11 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
 
           <Text style={styles.inputLabel}>Email</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="mail-outline" size={18} color={COLORS.textMuted} />
+            <Ionicons name="mail-outline" size={18} color={colors.textMuted} />
             <TextInput
               style={styles.input}
               placeholder="seu@email.com"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -91,11 +95,11 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
 
           <Text style={styles.inputLabel}>Senha</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={18} color={COLORS.textMuted} />
+            <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} />
             <TextInput
               style={styles.input}
               placeholder="Mínimo 6 caracteres"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={senha}
               onChangeText={setSenha}
               secureTextEntry
@@ -104,11 +108,11 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
 
           <Text style={styles.inputLabel}>Confirmar senha</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={18} color={COLORS.textMuted} />
+            <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} />
             <TextInput
               style={styles.input}
               placeholder="Repita a senha"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={colors.textMuted}
               value={confirmarSenha}
               onChangeText={setConfirmarSenha}
               secureTextEntry
@@ -128,7 +132,7 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
             activeOpacity={0.8}
           >
             {loading ? (
-              <ActivityIndicator color={COLORS.primary} />
+              <ActivityIndicator color={colors.primary} />
             ) : (
               <Text style={styles.registerBtnText}>Criar conta</Text>
             )}
@@ -146,10 +150,10 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   scrollContent: {
@@ -162,12 +166,12 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
 
   titleContainer: {
@@ -177,52 +181,52 @@ const styles = StyleSheet.create({
   titulo: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: 8,
   },
   subtitulo: {
     fontSize: 15,
-    color: COLORS.textMuted,
+    color: colors.textMuted,
   },
 
   inputLabel: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '600',
     marginBottom: 8,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 56,
     marginBottom: 18,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     gap: 12,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    color: COLORS.text,
+    color: colors.text,
   },
 
   termos: {
     fontSize: 12,
-    color: COLORS.textMuted,
+    color: colors.textMuted,
     lineHeight: 18,
     marginBottom: 24,
     textAlign: 'center',
   },
   termosLink: {
-    color: COLORS.accent,
+    color: colors.accent,
     fontWeight: '600',
   },
 
   registerBtn: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
@@ -230,7 +234,7 @@ const styles = StyleSheet.create({
   },
   registerBtnDisabled: { opacity: 0.7 },
   registerBtnText: {
-    color: COLORS.primary,
+    color: colors.primary,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -242,11 +246,11 @@ const styles = StyleSheet.create({
   },
   footerTexto: {
     fontSize: 14,
-    color: COLORS.textMuted,
+    color: colors.textMuted,
   },
   footerLink: {
     fontSize: 14,
-    color: COLORS.accent,
+    color: colors.accent,
     fontWeight: 'bold',
   },
 });

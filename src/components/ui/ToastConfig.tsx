@@ -1,42 +1,55 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { useTheme } from '../../contexts/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 
 type ToastProps = {
   text1?: string;
   text2?: string;
 };
 
-const SuccessToast: React.FC<ToastProps> = ({ text1, text2 }) => (
-  <View style={[styles.container, styles.success]}>
-    <Ionicons name="checkmark-circle" size={22} color={COLORS.success} />
-    <View style={styles.textContainer}>
-      {text1 && <Text style={styles.title}>{text1}</Text>}
-      {text2 && <Text style={styles.message}>{text2}</Text>}
+const SuccessToast: React.FC<ToastProps> = ({ text1, text2 }) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+  return (
+    <View style={[styles.container, styles.success]}>
+      <Ionicons name="checkmark-circle" size={22} color={colors.success} />
+      <View style={styles.textContainer}>
+        {text1 && <Text style={styles.title}>{text1}</Text>}
+        {text2 && <Text style={styles.message}>{text2}</Text>}
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
-const ErrorToast: React.FC<ToastProps> = ({ text1, text2 }) => (
-  <View style={[styles.container, styles.error]}>
-    <Ionicons name="close-circle" size={22} color={COLORS.danger} />
-    <View style={styles.textContainer}>
-      {text1 && <Text style={styles.title}>{text1}</Text>}
-      {text2 && <Text style={styles.message}>{text2}</Text>}
+const ErrorToast: React.FC<ToastProps> = ({ text1, text2 }) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+  return (
+    <View style={[styles.container, styles.error]}>
+      <Ionicons name="close-circle" size={22} color={colors.danger} />
+      <View style={styles.textContainer}>
+        {text1 && <Text style={styles.title}>{text1}</Text>}
+        {text2 && <Text style={styles.message}>{text2}</Text>}
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
-const InfoToast: React.FC<ToastProps> = ({ text1, text2 }) => (
-  <View style={[styles.container, styles.info]}>
-    <Ionicons name="information-circle" size={22} color={COLORS.info} />
-    <View style={styles.textContainer}>
-      {text1 && <Text style={styles.title}>{text1}</Text>}
-      {text2 && <Text style={styles.message}>{text2}</Text>}
+const InfoToast: React.FC<ToastProps> = ({ text1, text2 }) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+  return (
+    <View style={[styles.container, styles.info]}>
+      <Ionicons name="information-circle" size={22} color={colors.info} />
+      <View style={styles.textContainer}>
+        {text1 && <Text style={styles.title}>{text1}</Text>}
+        {text2 && <Text style={styles.message}>{text2}</Text>}
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 export const toastConfig = {
   success: (props: ToastProps) => <SuccessToast text1={props.text1} text2={props.text2} />,
@@ -44,7 +57,7 @@ export const toastConfig = {
   info: (props: ToastProps) => <InfoToast text1={props.text1} text2={props.text2} />,
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -62,27 +75,27 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   success: {
-    backgroundColor: COLORS.card,
-    borderColor: COLORS.success,
+    backgroundColor: colors.card,
+    borderColor: colors.success,
   },
   error: {
-    backgroundColor: COLORS.card,
-    borderColor: COLORS.danger,
+    backgroundColor: colors.card,
+    borderColor: colors.danger,
   },
   info: {
-    backgroundColor: COLORS.card,
-    borderColor: COLORS.info,
+    backgroundColor: colors.card,
+    borderColor: colors.info,
   },
   textContainer: {
     flex: 1,
   },
   title: {
-    color: COLORS.text,
+    color: colors.text,
     fontSize: 14,
     fontWeight: '700',
   },
   message: {
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     fontSize: 12,
     marginTop: 2,
   },

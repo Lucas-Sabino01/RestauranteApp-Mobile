@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../theme/colors';
+import { useTheme } from '../contexts/ThemeContext';
+import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
 
 type Props = {
@@ -11,21 +12,25 @@ type Props = {
   rightElement?: React.ReactNode;
 };
 
-export const Header: React.FC<Props> = ({ title, showBack, onBack, rightElement }) => (
-  <View style={styles.container}>
-    {showBack ? (
-      <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-        <Ionicons name="chevron-back" size={22} color={COLORS.text} />
-      </TouchableOpacity>
-    ) : (
-      <View style={styles.placeholder} />
-    )}
-    <Text style={styles.title} numberOfLines={1}>{title}</Text>
-    {rightElement || <View style={styles.placeholder} />}
-  </View>
-);
+export const Header: React.FC<Props> = ({ title, showBack, onBack, rightElement }) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+  return (
+    <View style={styles.container}>
+      {showBack ? (
+        <TouchableOpacity style={styles.backBtn} onPress={onBack}>
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.placeholder} />
+      )}
+      <Text style={styles.title} numberOfLines={1}>{title}</Text>
+      {rightElement || <View style={styles.placeholder} />}
+    </View>
+  );
+};
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -37,16 +42,16 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: colors.text,
     flex: 1,
     textAlign: 'center',
     marginHorizontal: 12,

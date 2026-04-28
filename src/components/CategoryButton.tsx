@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { COLORS } from '../theme/colors';
+import { useTheme } from '../contexts/ThemeContext';
+import type { ThemeColors } from '../theme/colors';
 import type { Categoria } from '../types';
 
 type Props = {
@@ -9,32 +10,37 @@ type Props = {
   onPress: () => void;
 };
 
-export const CategoryButton: React.FC<Props> = ({ categoria, isAtivo, onPress }) => (
-  <TouchableOpacity
-    style={[styles.botao, isAtivo && styles.botaoAtivo]}
-    onPress={onPress}
-    activeOpacity={0.7}
-  >
-    <Text style={styles.icone}>{categoria.icone}</Text>
-    <Text style={[styles.texto, isAtivo && styles.textoAtivo]}>{categoria.nome}</Text>
-  </TouchableOpacity>
-);
+export const CategoryButton: React.FC<Props> = ({ categoria, isAtivo, onPress }) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+  
+  return (
+    <TouchableOpacity
+      style={[styles.botao, isAtivo && styles.botaoAtivo]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <Text style={styles.icone}>{categoria.icone}</Text>
+      <Text style={[styles.texto, isAtivo && styles.textoAtivo]}>{categoria.nome}</Text>
+    </TouchableOpacity>
+  );
+};
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
   botao: {
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 16,
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     marginRight: 12,
     minWidth: 72,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   botaoAtivo: {
-    backgroundColor: COLORS.accent,
-    borderColor: COLORS.accent,
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
   },
   icone: {
     fontSize: 22,
@@ -42,11 +48,11 @@ const styles = StyleSheet.create({
   },
   texto: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   textoAtivo: {
-    color: COLORS.primary,
+    color: colors.primary,
     fontWeight: 'bold',
   },
 });

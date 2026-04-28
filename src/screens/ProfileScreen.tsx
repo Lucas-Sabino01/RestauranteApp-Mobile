@@ -4,7 +4,10 @@ import {
   ScrollView, Image, TouchableOpacity, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../theme/colors';
+import * as Notifications from 'expo-notifications';
+import Toast from 'react-native-toast-message';
+import { useTheme } from '../contexts/ThemeContext';
+import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavorites } from '../contexts/FavoritesContext';
@@ -19,6 +22,9 @@ type MenuItem = {
 };
 
 export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+
   const { user, isAuthenticated, logout } = useAuth();
   const { favorites } = useFavorites();
 
@@ -29,15 +35,37 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
     ]);
   };
 
+  const handleTestNotification = async () => {
+    try {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Toast.show({ type: 'error', text1: 'Permissão negada' });
+        return;
+      }
+      
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Novo café adicionado! ☕',
+          body: 'O "Café das Flores" acabou de chegar no Guia Curitiba.',
+          sound: true,
+        },
+        trigger: null,
+      });
+      Toast.show({ type: 'info', text1: 'Notificação enviada' });
+    } catch (error) {
+      Toast.show({ type: 'error', text1: 'Erro ao enviar' });
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+        <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
         <View style={styles.guestContainer}>
-          <Ionicons name="person-circle-outline" size={80} color={COLORS.textMuted} />
+          <Ionicons name="person-circle-outline" size={80} color={colors.textMuted} />
           <Text style={styles.guestTitulo}>Faça login para começar</Text>
           <Text style={styles.guestDesc}>
-            Entre na sua conta para fazer pedidos, salvar favoritos e ver seu histórico.
+            Entre na sua conta para salvar seus lugares favoritos e personalizar sua experiência.
           </Text>
           <TouchableOpacity
             style={styles.loginBtn}
@@ -58,28 +86,10 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
 
   const menuItems: MenuItem[] = [
     {
-      icone: 'cube-outline',
-      label: 'Meus Pedidos',
-      desc: 'Acompanhe e veja pedidos anteriores',
-      onPress: () => navigation.navigate('Orders'),
-    },
-    {
       icone: 'heart-outline',
       label: 'Favoritos',
-      desc: `${favorites.length} itens salvos`,
+      desc: `${favorites.length} lugares salvos`,
       onPress: () => navigation.navigate('Favorites'),
-    },
-    {
-      icone: 'location-outline',
-      label: 'Endereços',
-      desc: 'Gerencie seus endereços de entrega',
-      onPress: () => {},
-    },
-    {
-      icone: 'card-outline',
-      label: 'Pagamento',
-      desc: 'Cartões e métodos de pagamento',
-      onPress: () => {},
     },
     {
       icone: 'settings-outline',
@@ -94,6 +104,12 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
       onPress: () => {},
     },
     {
+      icone: 'notifications-outline',
+      label: 'Testar Notificação',
+      desc: 'Envia uma notificação local',
+      onPress: handleTestNotification,
+    },
+    {
       icone: 'log-out-outline',
       label: 'Sair da conta',
       desc: 'Desconectar do aplicativo',
@@ -104,7 +120,7 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitulo}>Perfil</Text>
@@ -119,7 +135,7 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
             <Text style={styles.userEmail}>{user?.email}</Text>
           </View>
           <TouchableOpacity style={styles.editBtn}>
-            <Ionicons name="pencil" size={16} color={COLORS.accent} />
+            <Ionicons name="pencil" size={16} color={colors.accent} />
           </TouchableOpacity>
         </View>
 
@@ -129,8 +145,26 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
             <Text style={styles.statLabel}>Favoritos</Text>
           </View>
           <View style={styles.statCard}>
-            <Ionicons name="ribbon" size={20} color={COLORS.accent} />
+            <Ionicons name="ribbon" size={20} color={colors.accent} />
             <Text style={styles.statLabel}>Premium</Text>
+          </View>
+        </View>
+
+        <View style={styles.feedContainer}>
+          <Text style={styles.feedTitle}>Atividade de Amigos</Text>
+          <View style={styles.feedItem}>
+            <Image source={{ uri: 'https://randomuser.me/api/portraits/women/44.jpg' }} style={styles.feedAvatar} />
+            <View style={styles.feedContent}>
+              <Text style={styles.feedText}><Text style={styles.feedName}>Ana Souza</Text> avaliou o Café do Largo com 5 estrelas.</Text>
+              <Text style={styles.feedTime}>Há 2 horas</Text>
+            </View>
+          </View>
+          <View style={styles.feedItem}>
+            <Image source={{ uri: 'https://randomuser.me/api/portraits/men/22.jpg' }} style={styles.feedAvatar} />
+            <View style={styles.feedContent}>
+              <Text style={styles.feedText}><Text style={styles.feedName}>Carlos Lima</Text> favoritou Trattoria Bella Nonna.</Text>
+              <Text style={styles.feedTime}>Ontem</Text>
+            </View>
           </View>
         </View>
 
@@ -148,30 +182,30 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
               <Ionicons
                 name={item.icone}
                 size={22}
-                color={item.danger ? COLORS.danger : COLORS.textSecondary}
+                color={item.danger ? colors.danger : colors.textSecondary}
                 style={styles.menuIcone}
               />
               <View style={styles.menuTextos}>
-                <Text style={[styles.menuLabel, item.danger && { color: COLORS.danger }]}>
+                <Text style={[styles.menuLabel, item.danger && { color: colors.danger }]}>
                   {item.label}
                 </Text>
                 <Text style={styles.menuDesc}>{item.desc}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={COLORS.textMuted} />
+              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={styles.versao}>Café & Restaurante v1.0.0</Text>
+        <Text style={styles.versao}>Guia Curitiba v1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   scrollContent: {
@@ -181,7 +215,7 @@ const styles = StyleSheet.create({
   headerTitulo: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: colors.text,
     marginTop: 20,
     marginBottom: 24,
     fontFamily: FONTS.bold,
@@ -190,19 +224,19 @@ const styles = StyleSheet.create({
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     borderRadius: 20,
     padding: 18,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   userAvatar: {
     width: 64,
     height: 64,
     borderRadius: 32,
     borderWidth: 2,
-    borderColor: COLORS.accent,
+    borderColor: colors.accent,
   },
   userInfo: {
     flex: 1,
@@ -211,19 +245,19 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: 4,
     fontFamily: FONTS.semiBold,
   },
   userEmail: {
     fontSize: 14,
-    color: COLORS.textMuted,
+    color: colors.textMuted,
   },
   editBtn: {
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: COLORS.cardLight,
+    backgroundColor: colors.cardLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -236,31 +270,74 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     paddingVertical: 18,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   statNumero: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: COLORS.accent,
+    color: colors.accent,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: COLORS.textMuted,
+    color: colors.textMuted,
     fontWeight: '500',
     marginTop: 4,
   },
 
+  feedContainer: {
+    marginBottom: 24,
+  },
+  feedTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  feedItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  feedAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 12,
+  },
+  feedContent: {
+    flex: 1,
+  },
+  feedText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  feedName: {
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  feedTime: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 4,
+  },
+
   menuContainer: {
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.card,
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   menuItem: {
     flexDirection: 'row',
@@ -268,7 +345,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   menuIcone: {
     marginRight: 14,
@@ -279,18 +356,18 @@ const styles = StyleSheet.create({
   menuLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: 2,
   },
   menuDesc: {
     fontSize: 12,
-    color: COLORS.textMuted,
+    color: colors.textMuted,
   },
 
   versao: {
     textAlign: 'center',
     fontSize: 12,
-    color: COLORS.textMuted,
+    color: colors.textMuted,
     marginTop: 24,
   },
 
@@ -303,20 +380,20 @@ const styles = StyleSheet.create({
   guestTitulo: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: colors.text,
     marginBottom: 10,
     marginTop: 16,
     textAlign: 'center',
   },
   guestDesc: {
     fontSize: 15,
-    color: COLORS.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 32,
   },
   loginBtn: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
     width: '100%',
     paddingVertical: 16,
     borderRadius: 16,
@@ -324,7 +401,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   loginBtnText: {
-    color: COLORS.primary,
+    color: colors.primary,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -334,10 +411,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: COLORS.accent,
+    borderColor: colors.accent,
   },
   registerBtnText: {
-    color: COLORS.accent,
+    color: colors.accent,
     fontSize: 16,
     fontWeight: 'bold',
   },

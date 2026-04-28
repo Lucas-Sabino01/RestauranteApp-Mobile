@@ -1,36 +1,34 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps, BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
-import type { Produto } from '../types';
+import type { Estabelecimento } from '../types';
 
 export type HomeStackParamList = {
   Home: undefined;
-  Detail: { produto: Produto };
+  Detail: { estabelecimento: Estabelecimento };
 };
 
 export type SearchStackParamList = {
   Search: undefined;
-  SearchDetail: { produto: Produto };
+  SearchDetail: { estabelecimento: Estabelecimento };
 };
 
-export type CartStackParamList = {
-  Cart: undefined;
-  Checkout: undefined;
+export type MapStackParamList = {
+  Map: undefined;
 };
 
 export type ProfileStackParamList = {
   Profile: undefined;
   Login: undefined;
   Register: undefined;
-  Orders: undefined;
   Favorites: undefined;
-  FavoritesDetail: { produto: Produto };
+  FavoritesDetail: { estabelecimento: Estabelecimento };
 };
 
 export type RootTabParamList = {
   HomeTab: NavigatorScreenParams<HomeStackParamList> | undefined;
   SearchTab: NavigatorScreenParams<SearchStackParamList> | undefined;
-  CartTab: NavigatorScreenParams<CartStackParamList> | undefined;
+  MapTab: NavigatorScreenParams<MapStackParamList> | undefined;
   ProfileTab: NavigatorScreenParams<ProfileStackParamList> | undefined;
 };
 
@@ -52,22 +50,13 @@ export type SearchScreenProps = CompositeScreenProps<
 
 export type SearchDetailScreenProps = NativeStackScreenProps<SearchStackParamList, 'SearchDetail'>;
 
-// Cart Stack
-export type CartScreenProps = CompositeScreenProps<
-  NativeStackScreenProps<CartStackParamList, 'Cart'>,
-  BottomTabScreenProps<RootTabParamList>
->;
-
-export type CheckoutScreenProps = CompositeScreenProps<
-  NativeStackScreenProps<CartStackParamList, 'Checkout'>,
-  BottomTabScreenProps<RootTabParamList>
->;
+// Map Stack
+export type MapScreenProps = NativeStackScreenProps<MapStackParamList, 'Map'>;
 
 // Profile Stack
 export type ProfileScreenProps = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;
 export type LoginScreenProps = NativeStackScreenProps<ProfileStackParamList, 'Login'>;
 export type RegisterScreenProps = NativeStackScreenProps<ProfileStackParamList, 'Register'>;
-export type OrdersScreenProps = NativeStackScreenProps<ProfileStackParamList, 'Orders'>;
 
 export type FavoritesScreenProps = CompositeScreenProps<
   NativeStackScreenProps<ProfileStackParamList, 'Favorites'>,
@@ -77,6 +66,6 @@ export type FavoritesScreenProps = CompositeScreenProps<
 export type FavoritesDetailScreenProps = NativeStackScreenProps<ProfileStackParamList, 'FavoritesDetail'>;
 
 export type AnyDetailScreenProps = {
-  route: { params: { produto: Produto } };
+  route: { params: { estabelecimento: Estabelecimento } };
   navigation: { goBack: () => void };
 };
