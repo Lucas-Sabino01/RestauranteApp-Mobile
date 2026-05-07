@@ -10,7 +10,7 @@ type Props = {
   onPress: () => void;
 };
 
-export const CategoryButton: React.FC<Props> = ({ categoria, isAtivo, onPress }) => {
+const CategoryButtonInner: React.FC<Props> = ({ categoria, isAtivo, onPress }) => {
   const { colors } = useTheme();
   const styles = getStyles(colors);
   
@@ -19,12 +19,16 @@ export const CategoryButton: React.FC<Props> = ({ categoria, isAtivo, onPress })
       style={[styles.botao, isAtivo && styles.botaoAtivo]}
       onPress={onPress}
       activeOpacity={0.7}
+      accessibilityLabel={`Categoria ${categoria.nome}${isAtivo ? ', selecionada' : ''}`}
+      accessibilityRole="button"
     >
       <Text style={styles.icone}>{categoria.icone}</Text>
       <Text style={[styles.texto, isAtivo && styles.textoAtivo]}>{categoria.nome}</Text>
     </TouchableOpacity>
   );
 };
+
+export const CategoryButton = React.memo(CategoryButtonInner);
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   botao: {

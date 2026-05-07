@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
-  StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
+  StyleSheet, Text, View, Platform, StatusBar,
   TouchableOpacity, TextInput, KeyboardAvoidingView, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
@@ -10,7 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import type { RegisterScreenProps } from '../navigation/types';
 
 export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = getStyles(colors);
 
   const [nome, setNome] = useState('');
@@ -36,7 +37,7 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
     const sucesso = await register(nome, email, senha);
 
     if (sucesso) {
-      Alert.alert('Conta criada!', 'Bem-vindo ao Café & Restaurante!', [
+      Alert.alert('Conta criada!', 'Bem-vindo ao Guia Curitiba!', [
         { text: 'Continuar', onPress: () => navigation.goBack() },
       ]);
     } else {
@@ -45,8 +46,8 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.primary} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -154,7 +155,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.primary,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   scrollContent: {
     paddingHorizontal: 24,

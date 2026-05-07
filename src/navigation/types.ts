@@ -23,6 +23,8 @@ export type ProfileStackParamList = {
   Register: undefined;
   Favorites: undefined;
   FavoritesDetail: { estabelecimento: Estabelecimento };
+  Settings: undefined;
+  EditProfile: undefined;
 };
 
 export type RootTabParamList = {

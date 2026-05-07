@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
@@ -41,9 +41,9 @@ function formatEventTime(dataInicio: string, dataFim: string): string {
   return `${fmtH(start)} - ${fmtH(end)}`;
 }
 
-export const EventCard: React.FC<EventCardProps> = ({ evento, onPress }) => {
-  const { colors } = useTheme();
-  const styles = getStyles(colors);
+const EventCardInner: React.FC<EventCardProps> = ({ evento, onPress }) => {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const TIPO_CONFIG = {
     'promoção': { icon: 'pricetag' as const, color: colors.success, label: 'PROMOÇÃO' },
@@ -77,7 +77,10 @@ export const EventCard: React.FC<EventCardProps> = ({ evento, onPress }) => {
   };
 
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}>
+    <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}
+      accessibilityLabel={`Evento: ${evento.titulo} em ${evento.estabelecimentoNome}`}
+      accessibilityRole="button"
+    >
       <Image source={{ uri: evento.imagem }} style={styles.image} />
       <View style={styles.overlay} />
       <View style={[styles.tipoBadge, { backgroundColor: config.color }]}>
@@ -107,7 +110,8 @@ export const EventCard: React.FC<EventCardProps> = ({ evento, onPress }) => {
   );
 };
 
-const getStyles = (colors: ThemeColors) => StyleSheet.create({
+export const EventCard = React.memo(EventCardInner);
+const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   card: {
     width: 260,
     height: 180,
@@ -124,7 +128,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(27, 16, 21, 0.55)',
+    backgroundColor: isDark ? 'rgba(27, 16, 21, 0.55)' : 'rgba(0, 0, 0, 0.35)',
   },
   tipoBadge: {
     position: 'absolute',
@@ -149,7 +153,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     right: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(27, 16, 21, 0.75)',
+    backgroundColor: isDark ? 'rgba(27, 16, 21, 0.75)' : 'rgba(0, 0, 0, 0.55)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,

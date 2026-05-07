@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
@@ -13,9 +13,9 @@ type Props = {
   onPress: () => void;
 };
 
-export const RestaurantOfWeek: React.FC<Props> = ({ estabelecimento, onPress }) => {
-  const { colors } = useTheme();
-  const styles = getStyles(colors);
+const RestaurantOfWeekInner: React.FC<Props> = ({ estabelecimento, onPress }) => {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -39,7 +39,10 @@ export const RestaurantOfWeek: React.FC<Props> = ({ estabelecimento, onPress }) 
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-      <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
+      <TouchableOpacity activeOpacity={0.85} onPress={onPress}
+        accessibilityLabel={`Destaque da semana: ${estabelecimento.nome}, avaliação ${estabelecimento.avaliacao}`}
+        accessibilityRole="button"
+      >
         <Image source={{ uri: estabelecimento.imagem }} style={styles.image} />
         <View style={styles.overlay} />
 
@@ -74,7 +77,8 @@ export const RestaurantOfWeek: React.FC<Props> = ({ estabelecimento, onPress }) 
   );
 };
 
-const getStyles = (colors: ThemeColors) => StyleSheet.create({
+export const RestaurantOfWeek = React.memo(RestaurantOfWeekInner);
+const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   container: {
     borderRadius: 20,
     overflow: 'hidden',
@@ -88,7 +92,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(27, 16, 21, 0.45)',
+    backgroundColor: isDark ? 'rgba(27, 16, 21, 0.45)' : 'rgba(0, 0, 0, 0.3)',
   },
   badgeRow: {
     position: 'absolute',
@@ -102,7 +106,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   weekBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(27, 16, 21, 0.8)',
+    backgroundColor: isDark ? 'rgba(27, 16, 21, 0.8)' : 'rgba(0, 0, 0, 0.6)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
@@ -146,7 +150,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   infoPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(27, 16, 21, 0.7)',
+    backgroundColor: isDark ? 'rgba(27, 16, 21, 0.7)' : 'rgba(0, 0, 0, 0.5)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,

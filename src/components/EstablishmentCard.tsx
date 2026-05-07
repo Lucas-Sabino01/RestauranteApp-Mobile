@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
@@ -18,7 +18,7 @@ type EstablishmentCardProps = {
   index?: number;
 };
 
-export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
+const EstablishmentCardInner: React.FC<EstablishmentCardProps> = ({
   estabelecimento,
   variant,
   isFavorito,
@@ -27,7 +27,7 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
   index = 0,
 }) => {
   const { colors } = useTheme();
-  const styles = getStyles(colors);
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -82,10 +82,16 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
   if (variant === 'vertical') {
     return (
       <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-        <TouchableOpacity style={styles.verticalCard} activeOpacity={0.8} onPress={onPress}>
+        <TouchableOpacity style={styles.verticalCard} activeOpacity={0.8} onPress={onPress}
+          accessibilityLabel={`Restaurante ${estabelecimento.nome}, ${estabelecimento.categoria}, avaliação ${estabelecimento.avaliacao}`}
+          accessibilityRole="button"
+        >
           <Image source={{ uri: estabelecimento.imagem }} style={styles.verticalImage} />
           <Animated.View style={[styles.favButton, { transform: [{ scale: scaleAnim }] }]}>
-            <TouchableOpacity onPress={handleFavorite} activeOpacity={0.7}>
+            <TouchableOpacity onPress={handleFavorite} activeOpacity={0.7}
+              accessibilityLabel={isFavorito ? `Remover ${estabelecimento.nome} dos favoritos` : `Adicionar ${estabelecimento.nome} aos favoritos`}
+              accessibilityRole="button"
+            >
               <Ionicons
                 name={isFavorito ? 'heart' : 'heart-outline'}
                 size={18}
@@ -126,13 +132,19 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
 
   return (
     <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-      <TouchableOpacity style={styles.horizontalCard} activeOpacity={0.8} onPress={onPress}>
+      <TouchableOpacity style={styles.horizontalCard} activeOpacity={0.8} onPress={onPress}
+        accessibilityLabel={`Restaurante ${estabelecimento.nome}, ${estabelecimento.categoria}, avaliação ${estabelecimento.avaliacao}`}
+        accessibilityRole="button"
+      >
         <Image source={{ uri: estabelecimento.imagem }} style={styles.horizontalImage} />
         <View style={styles.horizontalContent}>
           <View style={styles.horizontalHeader}>
             <Text style={styles.horizontalNome} numberOfLines={1}>{estabelecimento.nome}</Text>
             <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-              <TouchableOpacity onPress={handleFavorite} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <TouchableOpacity onPress={handleFavorite} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityLabel={isFavorito ? `Remover ${estabelecimento.nome} dos favoritos` : `Adicionar ${estabelecimento.nome} aos favoritos`}
+                accessibilityRole="button"
+              >
                 <Ionicons
                   name={isFavorito ? 'heart' : 'heart-outline'}
                   size={20}
@@ -174,6 +186,7 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
   );
 };
 
+export const EstablishmentCard = React.memo(EstablishmentCardInner);
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   verticalCard: {
     width: 180,

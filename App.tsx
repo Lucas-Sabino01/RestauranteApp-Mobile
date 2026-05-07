@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import { 
@@ -11,6 +12,7 @@ import {
 } from '@expo-google-fonts/poppins';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { FavoritesProvider } from './src/contexts/FavoritesContext';
+import { ReviewsProvider } from './src/contexts/ReviewsContext';
 import { LocationProvider } from './src/contexts/LocationContext';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
@@ -74,15 +76,19 @@ function AppContent() {
 export default function App() {
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <LocationProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <LocationProvider>
           <FavoritesProvider>
-            <AppContent />
-            <Toast config={toastConfig} />
-          </FavoritesProvider>
-        </LocationProvider>
-      </AuthProvider>
-    </ThemeProvider>
+              <ReviewsProvider>
+                <AppContent />
+                <Toast config={toastConfig} />
+              </ReviewsProvider>
+            </FavoritesProvider>
+          </LocationProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

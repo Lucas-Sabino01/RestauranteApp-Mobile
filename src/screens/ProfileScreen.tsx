@@ -1,8 +1,9 @@
 import React from 'react';
 import {
-  StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
-  ScrollView, Image, TouchableOpacity, Alert,
+  StyleSheet, Text, View, Platform, StatusBar,
+  ScrollView, Image, TouchableOpacity, Alert, Linking,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import Toast from 'react-native-toast-message';
@@ -11,6 +12,8 @@ import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavorites } from '../contexts/FavoritesContext';
+import { useReviews } from '../contexts/ReviewsContext';
+import { ATIVIDADES_AMIGOS } from '../data/mock';
 import type { ProfileScreenProps } from '../navigation/types';
 
 type MenuItem = {
@@ -22,11 +25,12 @@ type MenuItem = {
 };
 
 export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = getStyles(colors);
 
   const { user, isAuthenticated, logout } = useAuth();
   const { favorites } = useFavorites();
+  const { userReviewCount } = useReviews();
 
   const handleLogout = () => {
     Alert.alert('Sair', 'Tem certeza que deseja sair da conta?', [
@@ -59,8 +63,8 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
 
   if (!isAuthenticated) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.primary} />
         <View style={styles.guestContainer}>
           <Ionicons name="person-circle-outline" size={80} color={colors.textMuted} />
           <Text style={styles.guestTitulo}>Faça login para começar</Text>
@@ -95,13 +99,13 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
       icone: 'settings-outline',
       label: 'Configurações',
       desc: 'Notificações, tema e privacidade',
-      onPress: () => {},
+      onPress: () => navigation.navigate('Settings'),
     },
     {
       icone: 'help-circle-outline',
       label: 'Ajuda & Suporte',
       desc: 'Central de ajuda e FAQ',
-      onPress: () => {},
+      onPress: () => Linking.openURL('mailto:suporte@guiacuritiba.com.br?subject=Ajuda%20-%20Guia%20Curitiba'),
     },
     {
       icone: 'notifications-outline',
@@ -119,8 +123,8 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.primary} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitulo}>Perfil</Text>
@@ -134,7 +138,12 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
             <Text style={styles.userName}>{user?.nome}</Text>
             <Text style={styles.userEmail}>{user?.email}</Text>
           </View>
-          <TouchableOpacity style={styles.editBtn}>
+          <TouchableOpacity
+            style={styles.editBtn}
+            onPress={() => navigation.navigate('EditProfile')}
+            accessibilityLabel="Editar perfil"
+            accessibilityRole="button"
+          >
             <Ionicons name="pencil" size={16} color={colors.accent} />
           </TouchableOpacity>
         </View>
@@ -145,27 +154,24 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
             <Text style={styles.statLabel}>Favoritos</Text>
           </View>
           <View style={styles.statCard}>
-            <Ionicons name="ribbon" size={20} color={colors.accent} />
-            <Text style={styles.statLabel}>Premium</Text>
+            <Text style={styles.statNumero}>{userReviewCount}</Text>
+            <Text style={styles.statLabel}>Avaliações</Text>
           </View>
         </View>
 
         <View style={styles.feedContainer}>
           <Text style={styles.feedTitle}>Atividade de Amigos</Text>
-          <View style={styles.feedItem}>
-            <Image source={{ uri: 'https://randomuser.me/api/portraits/women/44.jpg' }} style={styles.feedAvatar} />
-            <View style={styles.feedContent}>
-              <Text style={styles.feedText}><Text style={styles.feedName}>Ana Souza</Text> avaliou o Café do Largo com 5 estrelas.</Text>
-              <Text style={styles.feedTime}>Há 2 horas</Text>
+          {ATIVIDADES_AMIGOS.map((atividade) => (
+            <View key={atividade.id} style={styles.feedItem}>
+              <Image source={{ uri: atividade.avatar }} style={styles.feedAvatar} />
+              <View style={styles.feedContent}>
+                <Text style={styles.feedText}>
+                  <Text style={styles.feedName}>{atividade.nome}</Text> {atividade.acao}
+                </Text>
+                <Text style={styles.feedTime}>{atividade.tempo}</Text>
+              </View>
             </View>
-          </View>
-          <View style={styles.feedItem}>
-            <Image source={{ uri: 'https://randomuser.me/api/portraits/men/22.jpg' }} style={styles.feedAvatar} />
-            <View style={styles.feedContent}>
-              <Text style={styles.feedText}><Text style={styles.feedName}>Carlos Lima</Text> favoritou Trattoria Bella Nonna.</Text>
-              <Text style={styles.feedTime}>Ontem</Text>
-            </View>
-          </View>
+          ))}
         </View>
 
         <View style={styles.menuContainer}>
@@ -206,7 +212,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.primary,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   scrollContent: {
     paddingHorizontal: 20,

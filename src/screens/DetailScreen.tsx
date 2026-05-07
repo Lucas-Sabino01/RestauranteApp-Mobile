@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import {
-  StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
+  StyleSheet, Text, View, Platform, StatusBar,
   ScrollView, Image, TouchableOpacity, Linking, Dimensions, Share,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Toast from 'react-native-toast-message';
@@ -10,6 +11,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
 import { useFavorites } from '../contexts/FavoritesContext';
+import { useReviews } from '../contexts/ReviewsContext';
 import { OpenBadge } from '../components/ui/OpenBadge';
 import { PhotoViewer } from '../components/PhotoViewer';
 import { ReviewCard } from '../components/ReviewCard';
@@ -23,16 +25,16 @@ import type { Estabelecimento, Review } from '../types';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
-  const { colors } = useTheme();
-  const styles = getStyles(colors);
+  const { colors, isDark } = useTheme();
+  const styles = getStyles(colors, isDark);
 
   const { estabelecimento } = route.params as { estabelecimento: Estabelecimento };
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { getReviews, addReview } = useReviews();
   const [activePhoto, setActivePhoto] = useState(0);
   const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
   const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
-  const [userReviews, setUserReviews] = useState<Review[]>([]);
   const isFav = isFavorite(estabelecimento.id);
   const status = getOpenStatus(estabelecimento.horario);
   const { userLocation } = useLocation();
@@ -48,6 +50,7 @@ export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
     return formatarDistancia(distKm);
   }, [userLocation, estabelecimento.coordenadas]);
 
+  const userReviews = getReviews(estabelecimento.id);
   const reviews = useMemo(() => {
     const mockReviews = REVIEWS_MOCK.filter((r) => r.estabelecimentoId === estabelecimento.id);
     return [...userReviews, ...mockReviews];
@@ -62,7 +65,7 @@ export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
       comentario,
       data: new Date().toISOString().split('T')[0],
     };
-    setUserReviews((prev) => [newReview, ...prev]);
+    addReview(newReview);
     setReviewModalVisible(false);
   };
 
@@ -108,8 +111,8 @@ export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.primary} />
       <View style={styles.fixedHeader}>
         <TouchableOpacity style={styles.headerButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
@@ -286,15 +289,14 @@ export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
   );
 };
 
-const getStyles = (colors: ThemeColors) => StyleSheet.create({
+const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.primary,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   fixedHeader: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 50,
+    top: 10,
     left: 16,
     right: 16,
     zIndex: 10,
@@ -309,7 +311,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: 'rgba(27, 16, 21, 0.7)',
+    backgroundColor: isDark ? 'rgba(27, 16, 21, 0.7)' : 'rgba(255, 255, 255, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,

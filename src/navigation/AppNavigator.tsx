@@ -23,6 +23,8 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
+import { EditProfileScreen } from '../screens/EditProfileScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -64,6 +66,8 @@ function ProfileStackNavigator() {
       <ProfileStack.Screen name="Register" component={RegisterScreen} />
       <ProfileStack.Screen name="Favorites" component={FavoritesScreen} />
       <ProfileStack.Screen name="FavoritesDetail" component={DetailScreen} />
+      <ProfileStack.Screen name="Settings" component={SettingsScreen} />
+      <ProfileStack.Screen name="EditProfile" component={EditProfileScreen} />
     </ProfileStack.Navigator>
   );
 }

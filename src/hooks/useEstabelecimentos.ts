@@ -1,62 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import type { Estabelecimento } from '../types';
 import { estabelecimentoService } from '../services/estabelecimentoService';
+import { useAsyncData } from './useAsyncData';
 
-type UseEstabelecimentosReturn = {
-  estabelecimentos: Estabelecimento[];
-  loading: boolean;
-  error: string | null;
-  refetch: () => void;
+export const useEstabelecimentos = (categoria?: string) => {
+  return useAsyncData<Estabelecimento[]>(
+    () => estabelecimentoService.listar(categoria),
+    [],
+    [categoria],
+  );
 };
 
-export const useEstabelecimentos = (categoria?: string): UseEstabelecimentosReturn => {
-  const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchEstabelecimentos = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await estabelecimentoService.listar(categoria);
-      setEstabelecimentos(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar estabelecimentos');
-    } finally {
-      setLoading(false);
-    }
-  }, [categoria]);
-
-  useEffect(() => {
-    fetchEstabelecimentos();
-  }, [fetchEstabelecimentos]);
-
-  return { estabelecimentos, loading, error, refetch: fetchEstabelecimentos };
-};
-
-export const useDestaques = (): UseEstabelecimentosReturn => {
-  const [estabelecimentos, setEstabelecimentos] = useState<Estabelecimento[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchDestaques = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await estabelecimentoService.destaques();
-      setEstabelecimentos(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar destaques');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchDestaques();
-  }, [fetchDestaques]);
-
-  return { estabelecimentos, loading, error, refetch: fetchDestaques };
+export const useDestaques = () => {
+  return useAsyncData<Estabelecimento[]>(
+    () => estabelecimentoService.destaques(),
+    [],
+  );
 };
 
 type UseSearchReturn = {

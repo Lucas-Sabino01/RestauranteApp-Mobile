@@ -3,6 +3,7 @@ import {
   StyleSheet, Text, View, Dimensions, TouchableOpacity, Animated,
   FlatList,
 } from 'react-native';
+import type { ViewToken } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
@@ -75,7 +76,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onFinish }) 
     onFinish();
   };
 
-  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0) {
       setCurrentIndex(viewableItems[0].index ?? 0);
     }

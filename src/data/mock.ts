@@ -381,3 +381,42 @@ export const EVENTOS_MOCK: Evento[] = [
     tipo: 'especial',
   },
 ];
+
+export type AtividadeAmigo = {
+  id: string;
+  nome: string;
+  avatar: string;
+  acao: string;
+  tempo: string;
+};
+
+export const ATIVIDADES_AMIGOS: AtividadeAmigo[] = [
+  {
+    id: 'a1',
+    nome: 'Ana Souza',
+    avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+    acao: 'avaliou o Café do Largo com 5 estrelas.',
+    tempo: 'Há 2 horas',
+  },
+  {
+    id: 'a2',
+    nome: 'Carlos Lima',
+    avatar: 'https://randomuser.me/api/portraits/men/22.jpg',
+    acao: 'favoritou Trattoria Bella Nonna.',
+    tempo: 'Ontem',
+  },
+  {
+    id: 'a3',
+    nome: 'Marina Costa',
+    avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
+    acao: 'visitou Boteco do Zé pela primeira vez.',
+    tempo: 'Há 3 dias',
+  },
+  {
+    id: 'a4',
+    nome: 'Pedro Santos',
+    avatar: 'https://randomuser.me/api/portraits/men/45.jpg',
+    acao: 'recomendou Padaria Artesanal para você.',
+    tempo: 'Há 5 dias',
+  },
+];

@@ -1,16 +1,18 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
-  FlatList, TextInput, TouchableOpacity,
+  StyleSheet, Text, View, Platform, StatusBar,
+  FlatList, TextInput, TouchableOpacity, Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
+import { SPACING } from '../theme/spacing';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { useSearchEstabelecimentos } from '../hooks/useEstabelecimentos';
+import { useDebounce } from '../hooks/useDebounce';
 import { EstablishmentCard } from '../components/EstablishmentCard';
 import { FilterModal, EMPTY_FILTERS } from '../components/FilterModal';
 import type { Filters } from '../components/FilterModal';
@@ -21,6 +23,7 @@ import type { SearchScreenProps } from '../navigation/types';
 import type { Estabelecimento } from '../types';
 import { CATEGORIAS } from '../data/mock';
 
+// react-native-maps uses dynamic require for web compatibility — typed as any intentionally
 let MapView: any;
 let Marker: any;
 let Callout: any;
@@ -78,12 +81,19 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
     await AsyncStorage.removeItem(RECENT_SEARCHES_KEY);
   };
 
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  useEffect(() => {
+    if (debouncedSearchTerm.length >= 2) {
+      search(debouncedSearchTerm);
+    } else if (debouncedSearchTerm.length === 0) {
+      search('');
+    }
+  }, [debouncedSearchTerm, search]);
+
   const handleSearch = useCallback((text: string) => {
     setSearchTerm(text);
-    if (text.length >= 2) {
-      search(text);
-    }
-  }, [search]);
+  }, []);
 
   const handleSubmitSearch = () => {
     if (searchTerm.trim().length >= 2) {
@@ -156,8 +166,8 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
   const categoriasFiltro = CATEGORIAS.filter((c) => c.nome !== 'Tudo');
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.primary} />
 
       <View style={styles.header}>
         <Text style={styles.titulo}>Buscar</Text>
@@ -361,7 +371,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.primary,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   mapWrapper: {
     flex: 1,

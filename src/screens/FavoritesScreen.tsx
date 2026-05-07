@@ -1,8 +1,9 @@
 import React, { useMemo, useCallback } from 'react';
 import {
-  StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
+  StyleSheet, Text, View, Platform, StatusBar,
   FlatList, TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
@@ -14,7 +15,7 @@ import type { FavoritesScreenProps } from '../navigation/types';
 import type { Estabelecimento } from '../types';
 
 export const FavoritesScreen = ({ navigation }: FavoritesScreenProps) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = getStyles(colors);
 
   const { favorites, isFavorite, toggleFavorite, clearFavorites } = useFavorites();
@@ -35,8 +36,8 @@ export const FavoritesScreen = ({ navigation }: FavoritesScreenProps) => {
   ), [isFavorite, toggleFavorite, navigation]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.primary} />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -82,7 +83,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.primary,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
     flexDirection: 'row',

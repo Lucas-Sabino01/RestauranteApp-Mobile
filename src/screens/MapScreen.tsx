@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import {
-  StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
+  StyleSheet, Text, View, Platform, StatusBar,
   TouchableOpacity, Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
@@ -12,6 +13,7 @@ import type { Estabelecimento } from '../types';
 import type { MapScreenProps } from '../navigation/types';
 
 // O react-native-maps pode não funcionar corretamente na web sem config adicional
+// react-native-maps uses dynamic require for web compatibility — typed as any intentionally
 let MapView: any;
 let Marker: any;
 let Callout: any;
@@ -26,7 +28,7 @@ if (Platform.OS !== 'web') {
 }
 
 export const MapScreen = ({ navigation }: MapScreenProps) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = getStyles(colors);
 
   const [selected, setSelected] = useState<Estabelecimento | null>(null);
@@ -41,8 +43,8 @@ export const MapScreen = ({ navigation }: MapScreenProps) => {
 
   if (Platform.OS === 'web') {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.primary} />
         <View style={styles.header}>
           <Text style={styles.titulo}>Mapa</Text>
         </View>
@@ -60,8 +62,8 @@ export const MapScreen = ({ navigation }: MapScreenProps) => {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.primary} />
 
       <View style={styles.header}>
         <Text style={styles.titulo}>Explorar Mapa</Text>
@@ -75,7 +77,7 @@ export const MapScreen = ({ navigation }: MapScreenProps) => {
           initialRegion={initialRegion}
           showsUserLocation={true}
           showsMyLocationButton={true}
-          customMapStyle={mapStyle}
+          customMapStyle={isDark ? darkMapStyle : []}
         >
           {ESTABELECIMENTOS.map((estab: Estabelecimento) => (
             <Marker
@@ -112,7 +114,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.primary,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
     paddingHorizontal: 20,
@@ -224,7 +225,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
 });
 
 // Estilo de mapa escuro para combinar com o tema do app
-const mapStyle = [
+const darkMapStyle = [
   { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
   { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },

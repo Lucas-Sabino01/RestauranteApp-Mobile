@@ -3,6 +3,8 @@ import {
   StyleSheet, View, Image, TouchableOpacity, Modal, Dimensions, Text,
   ScrollView, StatusBar,
 } from 'react-native';
+import type { NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
@@ -23,11 +25,12 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
   onClose,
 }) => {
   const { colors } = useTheme();
-  const styles = getStyles(colors);
+  const insets = useSafeAreaInsets();
+  const styles = getStyles(colors, insets.top);
 
   const [activeIndex, setActiveIndex] = useState(initialIndex);
 
-  const handleScroll = (event: any) => {
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const index = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
     setActiveIndex(index);
   };
@@ -76,7 +79,7 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
   );
 };
 
-const getStyles = (colors: ThemeColors) => StyleSheet.create({
+const getStyles = (colors: ThemeColors, topInset: number) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.95)',
@@ -87,7 +90,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: topInset + 10,
     paddingBottom: 16,
   },
   closeButton: {

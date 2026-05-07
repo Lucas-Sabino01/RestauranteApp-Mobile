@@ -79,5 +79,3 @@ export const lightTheme: ThemeColors = {
   transparent: 'transparent',
 };
 
-// Aliasing temporarily for migration, will be removed/replaced by useTheme in components.
-export const COLORS = darkTheme;

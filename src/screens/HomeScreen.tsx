@@ -1,12 +1,14 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
-  StyleSheet, Text, View, SafeAreaView, Platform, StatusBar,
+  StyleSheet, Text, View, Platform, StatusBar,
   FlatList, ScrollView, Image, TouchableOpacity, RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
+import { SPACING } from '../theme/spacing';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { useEstabelecimentos, useDestaques } from '../hooks/useEstabelecimentos';
@@ -15,6 +17,7 @@ import { CategoryButton } from '../components/CategoryButton';
 import { EstablishmentCard } from '../components/EstablishmentCard';
 import { RestaurantOfWeek } from '../components/RestaurantOfWeek';
 import { EventCard } from '../components/EventCard';
+import { ErrorState } from '../components/ui/ErrorState';
 import { EstablishmentCardSkeleton, EstablishmentCardVerticalSkeleton } from '../components/ui/SkeletonLoader';
 import { EVENTOS_MOCK } from '../data/mock';
 import type { HomeScreenProps } from '../navigation/types';
@@ -22,21 +25,21 @@ import type { RootTabNavigationProp } from '../navigation/types';
 import type { Estabelecimento } from '../types';
 
 export const HomeScreen = ({ navigation }: HomeScreenProps) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = getStyles(colors);
 
   const [categoriaAtiva, setCategoriaAtiva] = useState('Tudo');
   const { user } = useAuth();
   const { isFavorite, toggleFavorite } = useFavorites();
-  const { categories } = useCategories();
-  const { estabelecimentos, loading: listLoading, refetch } = useEstabelecimentos(categoriaAtiva);
-  const { estabelecimentos: destaques, loading: destaquesLoading } = useDestaques();
+  const { data: categories } = useCategories();
+  const { data: estabelecimentos, loading: listLoading, error: listError, refetch } = useEstabelecimentos(categoriaAtiva);
+  const { data: destaques, loading: destaquesLoading } = useDestaques();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    refetch();
-    setTimeout(() => setRefreshing(false), 600);
+    await refetch();
+    setRefreshing(false);
   }, [refetch]);
 
   const nomeUsuario = user?.nome || 'Visitante';
@@ -59,7 +62,7 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
     />
   ), [isFavorite, toggleFavorite, navigation]);
 
-  const ListHeader = () => (
+  const ListHeader = useCallback(() => (
     <>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -201,11 +204,24 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
         </View>
       )}
     </>
-  );
+  ), [
+    colors, styles, saudacao, nomeUsuario, user, navigation, categories, categoriaAtiva,
+    destaquesLoading, restauranteDaSemana, destaques, isFavorite, toggleFavorite,
+    estabelecimentos, listLoading,
+  ]);
+
+  if (listError && !listLoading && estabelecimentos.length === 0) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.primary} />
+        <ErrorState message={listError} onRetry={refetch} />
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.primary} />
 
       <FlatList
         data={listLoading ? [] : estabelecimentos}
@@ -214,7 +230,7 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
         ListHeaderComponent={ListHeader}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
-        ListFooterComponent={<View style={{ height: 20 }} />}
+        ListFooterComponent={<View style={{ height: SPACING.lg }} />}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -232,23 +248,22 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.primary,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   scrollContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SPACING.lg,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.lg,
   },
   headerLeft: { flex: 1 },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: SPACING.xs,
     marginBottom: 6,
   },
   headerLocal: {
@@ -260,7 +275,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   saudacao: {
     fontSize: 14,
     color: colors.textSecondary,
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
     fontFamily: FONTS.regular,
   },
   titulo: {
@@ -282,10 +297,10 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderRadius: 16,
-    paddingHorizontal: 16,
+    borderRadius: SPACING.base,
+    paddingHorizontal: SPACING.base,
     height: 52,
-    marginBottom: 20,
+    marginBottom: SPACING.lg,
     borderWidth: 1,
     borderColor: colors.border,
     gap: 10,
@@ -294,21 +309,21 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   filterButton: {
     width: 36,
     height: 36,
-    borderRadius: 12,
+    borderRadius: SPACING.md,
     backgroundColor: colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
   },
   bannerContainer: {
-    borderRadius: 20,
+    borderRadius: SPACING.lg,
     overflow: 'hidden',
-    marginBottom: 24,
+    marginBottom: SPACING.xl,
   },
   bannerGradient: {
     flexDirection: 'row',
     backgroundColor: colors.brown,
-    padding: 20,
-    borderRadius: 20,
+    padding: SPACING.lg,
+    borderRadius: SPACING.lg,
     minHeight: 160,
   },
   bannerContent: { flex: 1, justifyContent: 'center' },
@@ -316,8 +331,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.accentLight,
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
+    paddingVertical: SPACING.xs,
+    borderRadius: SPACING.lg,
     marginBottom: 10,
   },
   bannerBadgeText: {
@@ -337,25 +352,25 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 13,
     color: colors.textWarm,
     lineHeight: 18,
-    marginBottom: 12,
+    marginBottom: SPACING.md,
   },
   bannerImagem: {
     width: 110,
     height: 140,
-    borderRadius: 16,
+    borderRadius: SPACING.base,
     marginLeft: 10,
   },
-  categoriasContainer: { marginBottom: 24 },
+  categoriasContainer: { marginBottom: SPACING.xl },
   secaoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: SPACING.base,
   },
   secaoTituloRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: SPACING.sm,
   },
   secaoTitulo: {
     fontSize: 20,
@@ -364,7 +379,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     fontFamily: FONTS.semiBold,
   },
   destaquesScroll: {
-    paddingBottom: 4,
-    marginBottom: 24,
+    paddingBottom: SPACING.xs,
+    marginBottom: SPACING.xl,
   },
 });

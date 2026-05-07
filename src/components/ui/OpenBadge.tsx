@@ -9,7 +9,7 @@ type OpenBadgeProps = {
   size?: 'small' | 'normal';
 };
 
-export const OpenBadge: React.FC<OpenBadgeProps> = ({ isOpen, label, size = 'normal' }) => {
+const OpenBadgeInner: React.FC<OpenBadgeProps> = ({ isOpen, label, size = 'normal' }) => {
   const { colors } = useTheme();
   const styles = getStyles(colors);
 
@@ -31,6 +31,8 @@ export const OpenBadge: React.FC<OpenBadgeProps> = ({ isOpen, label, size = 'nor
     </View>
   );
 };
+
+export const OpenBadge = React.memo(OpenBadgeInner);
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   badge: {
