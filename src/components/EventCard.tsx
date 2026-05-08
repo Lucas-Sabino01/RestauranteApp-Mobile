@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
 import Toast from 'react-native-toast-message';
 import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
@@ -56,6 +55,12 @@ const EventCardInner: React.FC<EventCardProps> = ({ evento, onPress }) => {
 
   const handleLembrete = async () => {
     try {
+      const Constants = require('expo-constants').default;
+      if (Constants.appOwnership === 'expo') {
+        Toast.show({ type: 'info', text1: 'Lembretes indisponíveis', text2: 'Use um development build' });
+        return;
+      }
+      const Notifications = require('expo-notifications');
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== 'granted') {
         Toast.show({ type: 'error', text1: 'Permissão negada para notificações' });
@@ -68,7 +73,7 @@ const EventCardInner: React.FC<EventCardProps> = ({ evento, onPress }) => {
           body: `O evento no ${evento.estabelecimentoNome} está chegando!`,
           sound: true,
         },
-        trigger: null, // Disparo imediato para evitar erro de tipo
+        trigger: null,
       });
       Toast.show({ type: 'success', text1: 'Lembrete ativado!', text2: 'Avisaremos você em breve.' });
     } catch (e) {

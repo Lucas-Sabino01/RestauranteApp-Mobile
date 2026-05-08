@@ -53,13 +53,31 @@ export const FavoritesScreen = ({ navigation }: FavoritesScreenProps) => {
 
       {favEstabelecimentos.length === 0 ? (
         <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="heart-outline" size={64} color={colors.textMuted} />
+          <View style={styles.emptyIllustration}>
+            <View style={[styles.emptyBubble, styles.bubble1]}>
+              <Ionicons name="restaurant" size={24} color={colors.accent} />
+            </View>
+            <View style={[styles.emptyBubble, styles.bubble2]}>
+              <Ionicons name="cafe" size={20} color={colors.accent} />
+            </View>
+            <View style={[styles.emptyBubble, styles.bubble3]}>
+              <Ionicons name="pizza" size={28} color={colors.accent} />
+            </View>
+            <View style={styles.emptyHeartContainer}>
+              <Ionicons name="heart" size={64} color={colors.danger} />
+            </View>
           </View>
           <Text style={styles.emptyTitle}>Nenhum favorito</Text>
           <Text style={styles.emptyDesc}>
             Toque no ❤️ nos estabelecimentos{'\n'}para salvá-los aqui
           </Text>
+          <TouchableOpacity 
+            style={styles.emptyBtn} 
+            onPress={() => navigation.getParent<any>()?.navigate('HomeTab')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.emptyBtnText}>Explorar locais</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -121,19 +139,72 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  emptyIcon: {
-    marginBottom: 16,
+  emptyIllustration: {
+    width: 160,
+    height: 160,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptyHeartContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.danger + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyBubble: {
+    position: 'absolute',
+    backgroundColor: colors.card,
+    borderRadius: 30,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  bubble1: {
+    top: 0,
+    left: 10,
+    transform: [{ rotate: '-15deg' }],
+  },
+  bubble2: {
+    top: 30,
+    right: 0,
+    transform: [{ rotate: '15deg' }],
+  },
+  bubble3: {
+    bottom: 10,
+    left: 20,
+    transform: [{ rotate: '-5deg' }],
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: colors.text,
+    fontFamily: FONTS.bold,
     marginBottom: 8,
   },
   emptyDesc: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 22,
+    fontFamily: FONTS.regular,
+    marginBottom: 32,
+  },
+  emptyBtn: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 16,
+  },
+  emptyBtnText: {
+    color: colors.primary,
+    fontWeight: 'bold',
+    fontSize: 16,
+    fontFamily: FONTS.bold,
   },
 });

@@ -23,7 +23,12 @@ export const EMPTY_FILTERS: Filters = {
   distanciaMaxima: null,
 };
 
-const PRECOS = ['$', '$$', '$$$', '$$$$'];
+const PRECOS = [
+  { valor: '$', label: 'Econômico', desc: 'até R$30' },
+  { valor: '$$', label: 'Moderado', desc: 'R$30-70' },
+  { valor: '$$$', label: 'Elevado', desc: 'R$70-150' },
+  { valor: '$$$$', label: 'Premium', desc: 'acima de R$150' },
+];
 const AVALIACOES = [4.0, 4.5, 4.7];
 const BAIRROS = [
   'Centro Histórico', 'Centro', 'Batel', 'Santa Felicidade',
@@ -107,13 +112,19 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             <View style={styles.chipsRow}>
               {PRECOS.map((p) => (
                 <TouchableOpacity
-                  key={p}
-                  style={[styles.chip, local.faixaPreco.includes(p) && styles.chipActive]}
-                  onPress={() => togglePreco(p)}
+                  key={p.valor}
+                  style={[styles.priceChip, local.faixaPreco.includes(p.valor) && styles.chipActive]}
+                  onPress={() => togglePreco(p.valor)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.chipText, local.faixaPreco.includes(p) && styles.chipTextActive]}>
-                    {p}
+                  <Text style={[styles.priceSymbol, local.faixaPreco.includes(p.valor) && styles.chipTextActive]}>
+                    {p.valor}
+                  </Text>
+                  <Text style={[styles.priceLabel, local.faixaPreco.includes(p.valor) && styles.chipTextActive]}>
+                    {p.label}
+                  </Text>
+                  <Text style={[styles.priceDesc, local.faixaPreco.includes(p.valor) && styles.priceDescActive]}>
+                    {p.desc}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -276,6 +287,36 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   chipTextActive: {
     color: colors.primary,
+  },
+  priceChip: {
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minWidth: 72,
+  },
+  priceSymbol: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.accent,
+    marginBottom: 2,
+  },
+  priceLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  priceDesc: {
+    fontSize: 10,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  priceDescActive: {
+    color: colors.primary,
+    opacity: 0.7,
   },
   toggleRow: {
     flexDirection: 'row',

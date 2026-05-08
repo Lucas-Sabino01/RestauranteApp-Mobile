@@ -15,6 +15,7 @@ export type SearchStackParamList = {
 
 export type MapStackParamList = {
   Map: undefined;
+  MapDetail: { estabelecimento: Estabelecimento };
 };
 
 export type ProfileStackParamList = {
@@ -54,6 +55,7 @@ export type SearchDetailScreenProps = NativeStackScreenProps<SearchStackParamLis
 
 // Map Stack
 export type MapScreenProps = NativeStackScreenProps<MapStackParamList, 'Map'>;
+export type MapDetailScreenProps = NativeStackScreenProps<MapStackParamList, 'MapDetail'>;
 
 // Profile Stack
 export type ProfileScreenProps = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;

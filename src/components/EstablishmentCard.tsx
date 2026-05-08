@@ -105,7 +105,7 @@ const EstablishmentCardInner: React.FC<EstablishmentCardProps> = ({
           <View style={styles.verticalContent}>
             <Text style={styles.verticalNome} numberOfLines={1}>{estabelecimento.nome}</Text>
             <View style={styles.categoriaRow}>
-              <Text style={styles.categoriaText}>{estabelecimento.categoria}</Text>
+              <Text style={styles.categoriaText}>{estabelecimento.subcategoria || estabelecimento.categoria}</Text>
               <Text style={styles.faixaPrecoText}>{estabelecimento.faixaPreco}</Text>
             </View>
             <View style={styles.infoRow}>
@@ -154,7 +154,7 @@ const EstablishmentCardInner: React.FC<EstablishmentCardProps> = ({
             </Animated.View>
           </View>
           <View style={styles.categoriaRow}>
-            <Text style={styles.categoriaText}>{estabelecimento.categoria}</Text>
+            <Text style={styles.categoriaText}>{estabelecimento.subcategoria || estabelecimento.categoria}</Text>
             <Text style={styles.faixaPrecoText}>{estabelecimento.faixaPreco}</Text>
             <OpenBadge isOpen={status.isOpen} label={status.label} size="small" />
           </View>

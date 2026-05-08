@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
 
@@ -54,6 +55,7 @@ function MapStackNavigator() {
   return (
     <MapStack.Navigator screenOptions={{ headerShown: false }}>
       <MapStack.Screen name="Map" component={MapScreen} />
+      <MapStack.Screen name="MapDetail" component={DetailScreen} />
     </MapStack.Navigator>
   );
 }
@@ -102,6 +104,8 @@ const TabIcon: React.FC<TabIconProps> = ({ iconName, iconNameFocused, focused, c
 
 export const AppNavigator = () => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, 10);
 
   return (
     <NavigationContainer>
@@ -112,8 +116,8 @@ export const AppNavigator = () => {
             backgroundColor: colors.card,
             borderTopColor: colors.border,
             borderTopWidth: 1,
-            height: 70,
-            paddingBottom: 10,
+            height: 60 + bottomPadding,
+            paddingBottom: bottomPadding,
             paddingTop: 8,
           },
           tabBarActiveTintColor: colors.accent,

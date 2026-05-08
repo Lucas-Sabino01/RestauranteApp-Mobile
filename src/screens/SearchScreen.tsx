@@ -14,6 +14,7 @@ import { useFavorites } from '../contexts/FavoritesContext';
 import { useSearchEstabelecimentos } from '../hooks/useEstabelecimentos';
 import { useDebounce } from '../hooks/useDebounce';
 import { EstablishmentCard } from '../components/EstablishmentCard';
+import { CATEGORY_EMOJI } from './MapScreen';
 import { FilterModal, EMPTY_FILTERS } from '../components/FilterModal';
 import type { Filters } from '../components/FilterModal';
 import { EstablishmentCardSkeleton } from '../components/ui/SkeletonLoader';
@@ -53,6 +54,7 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isMapView, setIsMapView] = useState(false);
+  const [selectedMapEstab, setSelectedMapEstab] = useState<Estabelecimento | null>(null);
   const mapRef = React.useRef<any>(null);
 
   useEffect(() => {
@@ -89,7 +91,8 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
     } else if (debouncedSearchTerm.length === 0) {
       search('');
     }
-  }, [debouncedSearchTerm, search]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchTerm]);
 
   const handleSearch = useCallback((text: string) => {
     setSearchTerm(text);
@@ -238,7 +241,7 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
           />
         </View>
       )}
-      {searchTerm.length === 0 && recentSearches.length > 0 && (
+      {searchTerm.length === 0 && recentSearches.length > 0 && results.length > 0 && (
         <View style={styles.recentContainer}>
           <View style={styles.recentHeader}>
             <Text style={styles.recentTitle}>Buscas recentes</Text>
@@ -261,92 +264,122 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
           </View>
         </View>
       )}
-      {searchTerm.length === 0 && recentSearches.length === 0 && (
+      {loading && results.length === 0 ? (
+        <View style={styles.listContainer}>
+          {[1, 2, 3].map((i) => <EstablishmentCardSkeleton key={i} />)}
+        </View>
+      ) : filteredResults.length === 0 && searchTerm.length >= 2 ? (
         <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="compass-outline" size={64} color={colors.textMuted} />
+          <View style={styles.emptyIllustration}>
+            <View style={[styles.emptyBubble, styles.bubble1]}>
+              <Text style={{fontSize: 24}}>🤔</Text>
+            </View>
+            <View style={styles.emptySearchContainer}>
+              <Ionicons name="search" size={56} color={colors.accent} />
+            </View>
+          </View>
+          <Text style={styles.emptyTitle}>Nenhum resultado</Text>
+          <Text style={styles.emptyDesc}>
+            Não encontramos nada para "{searchTerm}".{'\n'}Tente outro termo ou ajuste os filtros.
+          </Text>
+          <TouchableOpacity 
+            style={styles.emptyBtn} 
+            onPress={handleClear}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.emptyBtnText}>Limpar busca</Text>
+          </TouchableOpacity>
+        </View>
+      ) : filteredResults.length === 0 && searchTerm.length === 0 ? (
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIllustration}>
+            <View style={[styles.emptyBubble, styles.bubble1]}>
+              <Text style={{fontSize: 24}}>🗺️</Text>
+            </View>
+            <View style={[styles.emptyBubble, styles.bubble2]}>
+              <Text style={{fontSize: 20}}>🌮</Text>
+            </View>
+            <View style={[styles.emptyBubble, styles.bubble3]}>
+              <Text style={{fontSize: 28}}>☕</Text>
+            </View>
+            <View style={styles.emptyCompassContainer}>
+              <Ionicons name="compass" size={64} color={colors.primary} />
+            </View>
           </View>
           <Text style={styles.emptyTitle}>Explore Curitiba</Text>
           <Text style={styles.emptyDesc}>
             Busque por nome de restaurante,{'\n'}cafeteria, bairro ou tipo de comida
           </Text>
         </View>
-      )}
-      {searchTerm.length >= 2 && (
-        <>
-          {loading ? (
-            <View style={styles.listContainer}>
-              {[1, 2, 3].map((i) => <EstablishmentCardSkeleton key={i} />)}
-            </View>
-          ) : filteredResults.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="search-outline" size={48} color={colors.textMuted} />
-              <Text style={styles.emptyTitle}>Nenhum resultado</Text>
-              <Text style={styles.emptyDesc}>
-                Não encontramos nada para "{searchTerm}".{'\n'}Tente outro termo ou ajuste os filtros.
-              </Text>
-            </View>
-          ) : isMapView && Platform.OS !== 'web' ? (
-              <View style={styles.mapWrapper}>
-                <MapView
-                  ref={mapRef}
-                  style={styles.map}
-                  provider={PROVIDER_GOOGLE}
-                  initialRegion={{
-                    latitude: location ? location.coords.latitude : -25.4284,
-                    longitude: location ? location.coords.longitude : -49.2733,
-                    latitudeDelta: 0.05,
-                    longitudeDelta: 0.05,
-                  }}
-                  showsUserLocation={true}
-                  customMapStyle={isDark ? mapStyle : []}
-                >
-                  {filteredResults.map((estab: Estabelecimento) => (
-                    <Marker
-                      key={estab.id}
-                      coordinate={estab.coordenadas}
-                    >
-                      <View style={{ alignItems: 'center' }}>
-                        <View style={{ backgroundColor: colors.accent, padding: 6, borderRadius: 16, borderWidth: 2, borderColor: colors.primary }}>
-                          <Ionicons name="restaurant" size={12} color={colors.primary} />
-                        </View>
-                        <View style={{
-                          width: 0, height: 0, backgroundColor: 'transparent', borderStyle: 'solid',
-                          borderLeftWidth: 5, borderRightWidth: 5, borderBottomWidth: 6,
-                          borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: colors.primary,
-                          transform: [{ rotate: '180deg' }], marginTop: -1
-                        }} />
+      ) : isMapView && Platform.OS !== 'web' ? (
+            <View style={styles.mapWrapper}>
+              <MapView
+                ref={mapRef}
+                style={styles.map}
+                provider={PROVIDER_GOOGLE}
+                initialRegion={{
+                  latitude: location ? location.coords.latitude : -25.4284,
+                  longitude: location ? location.coords.longitude : -49.2733,
+                  latitudeDelta: 0.05,
+                  longitudeDelta: 0.05,
+                }}
+                showsUserLocation={true}
+                customMapStyle={isDark ? mapStyle : []}
+                onPress={() => setSelectedMapEstab(null)}
+              >
+                {filteredResults.map((estab: Estabelecimento) => (
+                  <Marker
+                    key={estab.id}
+                    coordinate={estab.coordenadas}
+                    onPress={() => setSelectedMapEstab(estab)}
+                  >
+                    <View style={styles.markerOuter}>
+                      <View style={[styles.markerBadge, selectedMapEstab?.id === estab.id && styles.markerBadgeSelected]}>
+                        <Text style={styles.markerEmoji}>{CATEGORY_EMOJI[estab.categoria] || '📍'}</Text>
                       </View>
-                      <Callout tooltip onPress={() => navigation.navigate('SearchDetail', { estabelecimento: estab })}>
-                        <View style={{ width: 200, backgroundColor: colors.card, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
-                          <Image source={{ uri: estab.imagem }} style={{ width: '100%', height: 100 }} />
-                          <View style={{ padding: 10 }}>
-                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: colors.text }} numberOfLines={1}>{estab.nome}</Text>
-                            <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>{estab.categoria} • {estab.faixaPreco}</Text>
-                          </View>
-                        </View>
-                      </Callout>
-                    </Marker>
-                  ))}
-                </MapView>
-              </View>
-            ) : (
-              <FlatList
-                data={filteredResults}
-                renderItem={renderItem}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.listContainer}
-                showsVerticalScrollIndicator={false}
-                ListHeaderComponent={
-                  <Text style={styles.resultCount}>
-                    {filteredResults.length} {filteredResults.length === 1 ? 'resultado' : 'resultados'}
-                  </Text>
-                }
-              />
-            )}
-        </>
+                      <View style={styles.markerPointer} />
+                    </View>
+                  </Marker>
+                ))}
+              </MapView>
+              {selectedMapEstab && (
+                <TouchableOpacity
+                  style={styles.searchBottomCard}
+                  activeOpacity={0.9}
+                  onPress={() => navigation.navigate('SearchDetail', { estabelecimento: selectedMapEstab })}
+                >
+                  <Image source={{ uri: selectedMapEstab.imagem }} style={styles.searchBottomImg} />
+                  <View style={styles.searchBottomInfo}>
+                    <Text style={styles.searchBottomNome} numberOfLines={1}>{selectedMapEstab.nome}</Text>
+                    <Text style={styles.searchBottomCat}>{selectedMapEstab.subcategoria || selectedMapEstab.categoria} · {selectedMapEstab.faixaPreco}</Text>
+                    <View style={styles.searchBottomRow}>
+                      <Ionicons name="star" size={14} color={colors.star} />
+                      <Text style={styles.searchBottomRating}>{selectedMapEstab.avaliacao}</Text>
+                      <Text style={styles.searchBottomCount}>({selectedMapEstab.totalAvaliacoes})</Text>
+                    </View>
+                    {selectedMapEstab.especialidades && selectedMapEstab.especialidades.length > 0 && (
+                      <Text style={styles.searchBottomEsp} numberOfLines={1}>{selectedMapEstab.especialidades[0]}</Text>
+                    )}
+                  </View>
+                  <Ionicons name="chevron-forward" size={22} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
+      ) : (
+        <FlatList
+          data={filteredResults}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <Text style={styles.resultCount}>
+              {filteredResults.length} {filteredResults.length === 1 ? 'resultado' : 'resultados'}
+            </Text>
+          }
+        />
       )}
-      {searchTerm.length >= 2 && filteredResults.length > 0 && Platform.OS !== 'web' && (
+      {filteredResults.length > 0 && Platform.OS !== 'web' && (
         <TouchableOpacity
           style={styles.fab}
           onPress={() => setIsMapView(!isMapView)}
@@ -535,23 +568,90 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
+    marginTop: 40,
   },
-  emptyIcon: {
-    marginBottom: 16,
+  emptyIllustration: {
+    width: 160,
+    height: 160,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptySearchContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.accent + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyCompassContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  emptyBubble: {
+    position: 'absolute',
+    backgroundColor: colors.card,
+    borderRadius: 30,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 10,
+  },
+  bubble1: {
+    top: 0,
+    left: 10,
+    transform: [{ rotate: '-15deg' }],
+  },
+  bubble2: {
+    top: 30,
+    right: -10,
+    transform: [{ rotate: '15deg' }],
+  },
+  bubble3: {
+    bottom: 10,
+    left: 20,
+    transform: [{ rotate: '-5deg' }],
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: colors.text,
-    marginTop: 12,
+    fontFamily: FONTS.bold,
     marginBottom: 8,
+    textAlign: 'center',
   },
   emptyDesc: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 22,
-    marginTop: 8,
+    fontFamily: FONTS.regular,
+    marginBottom: 24,
+  },
+  emptyBtn: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 16,
+  },
+  emptyBtnText: {
+    color: colors.primary,
+    fontWeight: 'bold',
+    fontSize: 16,
+    fontFamily: FONTS.bold,
   },
   fab: {
     position: 'absolute',
@@ -575,6 +675,36 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 15,
   },
+  markerOuter: { alignItems: 'center' },
+  markerBadge: {
+    backgroundColor: colors.card, width: 44, height: 44, borderRadius: 22,
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2, borderColor: colors.border,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5,
+  },
+  markerBadgeSelected: { borderColor: colors.accent, backgroundColor: colors.accentLight, transform: [{ scale: 1.15 }] },
+  markerEmoji: { fontSize: 20 },
+  markerPointer: {
+    width: 0, height: 0, backgroundColor: 'transparent',
+    borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8,
+    borderLeftColor: 'transparent', borderRightColor: 'transparent',
+    borderTopColor: colors.border, marginTop: -1,
+  },
+  searchBottomCard: {
+    position: 'absolute', bottom: 12, left: 12, right: 12,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: colors.card, borderRadius: 16, padding: 12,
+    borderWidth: 1, borderColor: colors.border,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
+  },
+  searchBottomImg: { width: 64, height: 64, borderRadius: 12 },
+  searchBottomInfo: { flex: 1, marginLeft: 12 },
+  searchBottomNome: { fontSize: 16, fontWeight: 'bold', color: colors.text, fontFamily: FONTS.semiBold },
+  searchBottomCat: { fontSize: 12, color: colors.accent, fontWeight: '600', marginTop: 2 },
+  searchBottomRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  searchBottomRating: { fontSize: 13, fontWeight: '600', color: colors.text },
+  searchBottomCount: { fontSize: 12, color: colors.textMuted },
+  searchBottomEsp: { fontSize: 11, color: colors.textMuted, marginTop: 4 },
 });
 
 const mapStyle = [

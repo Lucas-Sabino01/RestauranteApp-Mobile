@@ -1,38 +1,50 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   StyleSheet, Text, View, Platform, StatusBar,
-  TouchableOpacity, Image,
+  TouchableOpacity, Image, ScrollView, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
-import { ESTABELECIMENTOS } from '../data/mock';
+import { ESTABELECIMENTOS, CATEGORIAS } from '../data/mock';
+import { useLocation } from '../contexts/LocationContext';
+import { calcularDistancia, formatarDistancia } from '../utils';
 import type { Estabelecimento } from '../types';
 import type { MapScreenProps } from '../navigation/types';
 
-// O react-native-maps pode não funcionar corretamente na web sem config adicional
-// react-native-maps uses dynamic require for web compatibility — typed as any intentionally
 let MapView: any;
 let Marker: any;
-let Callout: any;
 let PROVIDER_GOOGLE: any;
 
 if (Platform.OS !== 'web') {
   const Maps = require('react-native-maps');
   MapView = Maps.default;
   Marker = Maps.Marker;
-  Callout = Maps.Callout;
   PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
 }
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+export const CATEGORY_EMOJI: Record<string, string> = {
+  'Cafeterias': '☕',
+  'Restaurantes': '🍽️',
+  'Bares': '🍻',
+  'Padarias': '🥐',
+  'Docerias': '🍰',
+};
 
 export const MapScreen = ({ navigation }: MapScreenProps) => {
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors);
 
   const [selected, setSelected] = useState<Estabelecimento | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [userAddress, setUserAddress] = useState<string | null>(null);
   const mapRef = useRef<any>(null);
+  const { userLocation } = useLocation();
 
   const initialRegion = {
     latitude: -25.4284,
@@ -41,6 +53,49 @@ export const MapScreen = ({ navigation }: MapScreenProps) => {
     longitudeDelta: 0.05,
   };
 
+  useEffect(() => {
+    if (userLocation) {
+      (async () => {
+        try {
+          const [addr] = await Location.reverseGeocodeAsync({
+            latitude: userLocation.coords.latitude,
+            longitude: userLocation.coords.longitude,
+          });
+          if (addr) {
+            const parts = [addr.street, addr.name, addr.district].filter(Boolean);
+            setUserAddress(parts.join(', ') || 'Localização obtida');
+          }
+        } catch { setUserAddress('Curitiba, PR'); }
+      })();
+    }
+  }, [userLocation]);
+
+  const filteredEstabelecimentos = selectedCategory
+    ? ESTABELECIMENTOS.filter((e) => e.categoria === selectedCategory)
+    : ESTABELECIMENTOS;
+
+  const getDistanceStr = useCallback((estab: Estabelecimento) => {
+    if (!userLocation) return null;
+    const dist = calcularDistancia(
+      userLocation.coords.latitude, userLocation.coords.longitude,
+      estab.coordenadas.latitude, estab.coordenadas.longitude
+    );
+    return formatarDistancia(dist);
+  }, [userLocation]);
+
+  const handleCenterUser = () => {
+    if (userLocation && mapRef.current) {
+      mapRef.current.animateToRegion({
+        latitude: userLocation.coords.latitude,
+        longitude: userLocation.coords.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      }, 600);
+    }
+  };
+
+  const categoriasFiltro = CATEGORIAS.filter((c) => c.nome !== 'Tudo');
+
   if (Platform.OS === 'web') {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -48,7 +103,7 @@ export const MapScreen = ({ navigation }: MapScreenProps) => {
         <View style={styles.header}>
           <Text style={styles.titulo}>Mapa</Text>
         </View>
-        <View style={styles.content}>
+        <View style={styles.webContent}>
           <View style={styles.iconContainer}>
             <Ionicons name="map" size={80} color={colors.accent} />
           </View>
@@ -67,6 +122,28 @@ export const MapScreen = ({ navigation }: MapScreenProps) => {
 
       <View style={styles.header}>
         <Text style={styles.titulo}>Explorar Mapa</Text>
+        {userAddress && (
+          <View style={styles.locationRow}>
+            <Ionicons name="location" size={14} color={colors.accent} />
+            <Text style={styles.locationText} numberOfLines={1}>{userAddress}</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.categoriesRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+          {categoriasFiltro.map((cat) => (
+            <TouchableOpacity
+              key={cat.id}
+              style={[styles.catChip, selectedCategory === cat.nome && styles.catChipActive]}
+              onPress={() => setSelectedCategory(selectedCategory === cat.nome ? null : cat.nome)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.catEmoji}>{cat.icone}</Text>
+              <Text style={[styles.catText, selectedCategory === cat.nome && styles.catTextActive]}>{cat.nome}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       <View style={styles.mapContainer}>
@@ -76,232 +153,158 @@ export const MapScreen = ({ navigation }: MapScreenProps) => {
           provider={PROVIDER_GOOGLE}
           initialRegion={initialRegion}
           showsUserLocation={true}
-          showsMyLocationButton={true}
+          showsMyLocationButton={false}
           customMapStyle={isDark ? darkMapStyle : []}
+          onPress={() => setSelected(null)}
         >
-          {ESTABELECIMENTOS.map((estab: Estabelecimento) => (
+          {filteredEstabelecimentos.map((estab: Estabelecimento) => (
             <Marker
               key={estab.id}
               coordinate={estab.coordenadas}
               onPress={() => setSelected(estab)}
             >
-              <View style={styles.markerContainer}>
-                <View style={styles.markerBadge}>
-                  <Ionicons name="restaurant" size={12} color={colors.primary} />
+              <View style={styles.markerOuter}>
+                <View style={[styles.markerBadge, selected?.id === estab.id && styles.markerBadgeSelected]}>
+                  <Text style={styles.markerEmoji}>{CATEGORY_EMOJI[estab.categoria] || '📍'}</Text>
                 </View>
-                <View style={styles.markerTriangle} />
+                <View style={styles.markerPointer} />
               </View>
-
-              <Callout tooltip onPress={() => (navigation as any).navigate('Detail', { estabelecimento: estab })}>
-                <View style={styles.calloutContainer}>
-                  <Image source={{ uri: estab.imagem }} style={styles.calloutImage} />
-                  <View style={styles.calloutInfo}>
-                    <Text style={styles.calloutTitle} numberOfLines={1}>{estab.nome}</Text>
-                    <Text style={styles.calloutCategory}>{estab.categoria} • {estab.faixaPreco}</Text>
-                    <Text style={styles.calloutLink}>Ver detalhes</Text>
-                  </View>
-                </View>
-              </Callout>
             </Marker>
           ))}
         </MapView>
+
+        <TouchableOpacity style={styles.centerBtn} onPress={handleCenterUser} activeOpacity={0.8}>
+          <Ionicons name="locate" size={22} color={colors.accent} />
+        </TouchableOpacity>
       </View>
+
+      {selected && (
+        <View style={styles.bottomCard}>
+          <TouchableOpacity
+            style={styles.bottomCardInner}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('MapDetail', { estabelecimento: selected })}
+          >
+            <Image source={{ uri: selected.imagem }} style={styles.bottomCardImage} />
+            <View style={styles.bottomCardInfo}>
+              <Text style={styles.bottomCardName} numberOfLines={1}>{selected.nome}</Text>
+              <Text style={styles.bottomCardSub}>
+                {selected.subcategoria || selected.categoria} · {selected.faixaPreco}
+              </Text>
+              {selected.especialidades && selected.especialidades.length > 0 && (
+                <Text style={styles.bottomCardSpec} numberOfLines={1}>
+                  {selected.especialidades[0]}
+                </Text>
+              )}
+              <View style={styles.bottomCardMeta}>
+                <View style={styles.bottomCardRating}>
+                  <Ionicons name="star" size={14} color={colors.star} />
+                  <Text style={styles.bottomCardRatingText}>{selected.avaliacao}</Text>
+                </View>
+                {getDistanceStr(selected) && (
+                  <View style={styles.bottomCardDist}>
+                    <Ionicons name="navigate-outline" size={13} color={colors.textMuted} />
+                    <Text style={styles.bottomCardDistText}>{getDistanceStr(selected)}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            <View style={styles.bottomCardArrow}>
+              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+            </View>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.primary,
+  safeArea: { flex: 1, backgroundColor: colors.primary },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  titulo: { fontSize: 28, fontWeight: 'bold', color: colors.text, fontFamily: FONTS.bold },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  locationText: { fontSize: 13, color: colors.accent, fontWeight: '500', flex: 1 },
+  categoriesRow: { marginBottom: 8 },
+  catChip: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20,
+    borderWidth: 1, borderColor: colors.border, gap: 5,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 12,
-  },
-  titulo: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.text,
-    fontFamily: FONTS.bold,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  iconContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: colors.accentUltraLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 28,
-  },
-  comingSoonTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
-    fontFamily: FONTS.bold,
-    marginBottom: 12,
-  },
-  comingSoonDesc: {
-    fontSize: 15,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
+  catChipActive: { backgroundColor: colors.accentLight, borderColor: colors.accent },
+  catEmoji: { fontSize: 14 },
+  catText: { fontSize: 13, color: colors.textMuted, fontWeight: '600' },
+  catTextActive: { color: colors.accent },
   mapContainer: {
-    flex: 1,
-    borderRadius: 24,
-    overflow: 'hidden',
-    margin: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: colors.border,
+    flex: 1, borderRadius: 24, overflow: 'hidden', margin: 16, marginTop: 8,
+    marginBottom: 16, borderWidth: 1, borderColor: colors.border,
   },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  markerContainer: {
-    alignItems: 'center',
-  },
+  map: { ...StyleSheet.absoluteFillObject },
+  markerOuter: { alignItems: 'center' },
   markerBadge: {
-    backgroundColor: colors.accent,
-    padding: 6,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: colors.primary,
+    backgroundColor: colors.card, width: 44, height: 44, borderRadius: 22,
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2.5, borderColor: colors.border,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.35, shadowRadius: 5, elevation: 6,
   },
-  markerTriangle: {
-    width: 0,
-    height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 5,
-    borderRightWidth: 5,
-    borderBottomWidth: 6,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: colors.primary,
-    transform: [{ rotate: '180deg' }],
-    marginTop: -1,
+  markerBadgeSelected: { borderColor: colors.accent, backgroundColor: colors.accentLight, transform: [{ scale: 1.15 }] },
+  markerEmoji: { fontSize: 20 },
+  markerPointer: {
+    width: 0, height: 0, backgroundColor: 'transparent',
+    borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8,
+    borderLeftColor: 'transparent', borderRightColor: 'transparent',
+    borderTopColor: colors.border, marginTop: -1,
   },
-  calloutContainer: {
-    width: 200,
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
+  centerBtn: {
+    position: 'absolute', bottom: 16, right: 16, width: 48, height: 48,
+    borderRadius: 24, backgroundColor: colors.card, justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: colors.border,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 6, elevation: 6,
   },
-  calloutImage: {
-    width: '100%',
-    height: 100,
+  bottomCard: {
+    position: 'absolute', bottom: 20, left: 16, right: 16,
+    backgroundColor: colors.card, borderRadius: 20, overflow: 'hidden',
+    borderWidth: 1, borderColor: colors.border,
+    shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 10,
   },
-  calloutInfo: {
-    padding: 10,
+  bottomCardInner: { flexDirection: 'row', alignItems: 'center', padding: 12 },
+  bottomCardImage: { width: 72, height: 72, borderRadius: 14 },
+  bottomCardInfo: { flex: 1, marginLeft: 12 },
+  bottomCardName: { fontSize: 16, fontWeight: 'bold', color: colors.text, fontFamily: FONTS.semiBold },
+  bottomCardSub: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+  bottomCardSpec: { fontSize: 12, color: colors.textMuted, marginTop: 3 },
+  bottomCardMeta: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 6 },
+  bottomCardRating: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  bottomCardRatingText: { fontSize: 13, fontWeight: 'bold', color: colors.text },
+  bottomCardDist: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  bottomCardDistText: { fontSize: 12, color: colors.textMuted },
+  bottomCardArrow: { paddingLeft: 8 },
+  webContent: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
+  iconContainer: {
+    width: 140, height: 140, borderRadius: 70, backgroundColor: colors.accentUltraLight,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 28,
   },
-  calloutTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: colors.text,
-    fontFamily: FONTS.semiBold,
-  },
-  calloutCategory: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  calloutLink: {
-    fontSize: 12,
-    color: colors.accent,
-    fontWeight: '600',
-    marginTop: 6,
-  },
+  comingSoonTitle: { fontSize: 24, fontWeight: 'bold', color: colors.text, fontFamily: FONTS.bold, marginBottom: 12 },
+  comingSoonDesc: { fontSize: 15, color: colors.textMuted, textAlign: 'center', lineHeight: 24 },
 });
 
-// Estilo de mapa escuro para combinar com o tema do app
 const darkMapStyle = [
   { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
   { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
-  {
-    featureType: 'administrative.locality',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#d59563' }],
-  },
-  {
-    featureType: 'poi',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#d59563' }],
-  },
-  {
-    featureType: 'poi.park',
-    elementType: 'geometry',
-    stylers: [{ color: '#263c3f' }],
-  },
-  {
-    featureType: 'poi.park',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#6b9a76' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry',
-    stylers: [{ color: '#38414e' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry.stroke',
-    stylers: [{ color: '#212a37' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#9ca5b3' }],
-  },
-  {
-    featureType: 'road.highway',
-    elementType: 'geometry',
-    stylers: [{ color: '#746855' }],
-  },
-  {
-    featureType: 'road.highway',
-    elementType: 'geometry.stroke',
-    stylers: [{ color: '#1f2835' }],
-  },
-  {
-    featureType: 'road.highway',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#f3d19c' }],
-  },
-  {
-    featureType: 'transit',
-    elementType: 'geometry',
-    stylers: [{ color: '#2f3948' }],
-  },
-  {
-    featureType: 'transit.station',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#d59563' }],
-  },
-  {
-    featureType: 'water',
-    elementType: 'geometry',
-    stylers: [{ color: '#17263c' }],
-  },
-  {
-    featureType: 'water',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#515c6d' }],
-  },
-  {
-    featureType: 'water',
-    elementType: 'labels.text.stroke',
-    stylers: [{ color: '#17263c' }],
-  },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#d59563' }] },
+  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#d59563' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#263c3f' }] },
+  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#6b9a76' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#38414e' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#212a37' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9ca5b3' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#746855' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#1f2835' }] },
+  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#f3d19c' }] },
+  { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#2f3948' }] },
+  { featureType: 'transit.station', elementType: 'labels.text.fill', stylers: [{ color: '#d59563' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#17263c' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#515c6d' }] },
+  { featureType: 'water', elementType: 'labels.text.stroke', stylers: [{ color: '#17263c' }] },
 ];

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   StyleSheet, Text, View, Platform, StatusBar,
-  ScrollView, Image, TouchableOpacity, Linking, Dimensions, Share,
+  ScrollView, Image, TouchableOpacity, Linking, Dimensions, Share, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,11 +16,13 @@ import { OpenBadge } from '../components/ui/OpenBadge';
 import { PhotoViewer } from '../components/PhotoViewer';
 import { ReviewCard } from '../components/ReviewCard';
 import { WriteReviewModal } from '../components/WriteReviewModal';
+import { ReservationModal } from '../components/ReservationModal';
+import { ReservationConfirmation } from '../components/ReservationConfirmation';
 import { useLocation } from '../contexts/LocationContext';
 import { getOpenStatus, formatShareText, calcularDistancia, formatarDistancia } from '../utils';
 import { REVIEWS_MOCK } from '../data/mock';
 import type { AnyDetailScreenProps } from '../navigation/types';
-import type { Estabelecimento, Review } from '../types';
+import type { Estabelecimento, Review, ItemCardapio } from '../types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -35,6 +37,12 @@ export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
   const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
   const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [selectedMenuItem, setSelectedMenuItem] = useState<ItemCardapio | null>(null);
+  
+  const [reservationModalVisible, setReservationModalVisible] = useState(false);
+  const [confirmationModalVisible, setConfirmationModalVisible] = useState(false);
+  const [reservationDetails, setReservationDetails] = useState<{ data: string; hora: string; pessoas: number; obs: string } | null>(null);
+
   const isFav = isFavorite(estabelecimento.id);
   const status = getOpenStatus(estabelecimento.horario);
   const { userLocation } = useLocation();
@@ -163,7 +171,11 @@ export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
             <View style={styles.titleLeft}>
               <Text style={styles.nome}>{estabelecimento.nome}</Text>
               <View style={styles.categoriaRow}>
-                <Text style={styles.categoriaText}>{estabelecimento.categoria}</Text>
+                <Text style={styles.categoriaText}>
+                  {estabelecimento.subcategoria
+                    ? `${estabelecimento.categoria} · ${estabelecimento.subcategoria}`
+                    : estabelecimento.categoria}
+                </Text>
                 <Text style={styles.dotSeparator}>·</Text>
                 <Text style={styles.faixaPreco}>{estabelecimento.faixaPreco}</Text>
                 <OpenBadge isOpen={status.isOpen} label={status.label} />
@@ -233,6 +245,83 @@ export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
             <Text style={styles.sectionTitle}>Sobre</Text>
             <Text style={styles.descricao}>{estabelecimento.descricao}</Text>
           </View>
+          {estabelecimento.especialidades && estabelecimento.especialidades.length > 0 && (
+            <View style={styles.especialidadesSection}>
+              <Text style={styles.sectionTitle}>O que tem de bom</Text>
+              <View style={styles.especialidadesList}>
+                {estabelecimento.especialidades.map((esp, i) => (
+                  <View key={i} style={styles.especialidadeItem}>
+                    <Text style={styles.especialidadeText}>{esp}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+          {estabelecimento.cardapio && estabelecimento.cardapio.length > 0 && (
+            <View style={styles.cardapioSection}>
+              <View style={styles.cardapioHeader}>
+                <Text style={styles.sectionTitle}>Cardápio</Text>
+                {estabelecimento.linkCardapio && (
+                  <TouchableOpacity onPress={() => Linking.openURL(estabelecimento.linkCardapio!)} activeOpacity={0.7}>
+                    <View style={styles.cardapioLinkBtn}>
+                      <Ionicons name="document-text-outline" size={14} color={colors.accent} />
+                      <Text style={styles.cardapioLinkText}>Ver completo</Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              </View>
+              {(() => {
+                const categorias = [...new Set(estabelecimento.cardapio!.map((item) => item.categoria))];
+                return categorias.map((cat) => (
+                  <View key={cat}>
+                    <Text style={styles.cardapioCategoria}>{cat}</Text>
+                    {estabelecimento.cardapio!.filter((item) => item.categoria === cat).map((item, idx) => (
+                      <TouchableOpacity 
+                        key={idx} 
+                        style={styles.cardapioItem}
+                        activeOpacity={0.7}
+                        onPress={() => setSelectedMenuItem(item)}
+                      >
+                        {item.imagem ? (
+                          <Image source={{ uri: item.imagem }} style={styles.cardapioItemImage} />
+                        ) : (
+                          <View style={[styles.cardapioItemImage, styles.cardapioItemPlaceholder]}>
+                            <Ionicons name="restaurant-outline" size={24} color={colors.textMuted} />
+                          </View>
+                        )}
+                        <View style={styles.cardapioItemLeft}>
+                          <Text style={styles.cardapioItemNome}>{item.nome}</Text>
+                          {item.descricao && (
+                            <Text style={styles.cardapioItemDesc} numberOfLines={2}>{item.descricao}</Text>
+                          )}
+                        </View>
+                        <Text style={styles.cardapioItemPreco}>{item.preco}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ));
+              })()}
+            </View>
+          )}
+
+          {/* Botão de Reservar Mesa */}
+          <View style={styles.reservationSection}>
+            <TouchableOpacity 
+              style={styles.reservationBtn}
+              activeOpacity={0.8}
+              onPress={() => setReservationModalVisible(true)}
+            >
+              <View style={styles.reservationBtnContent}>
+                <Ionicons name="calendar-outline" size={24} color={colors.primary} />
+                <View style={styles.reservationBtnTextGroup}>
+                  <Text style={styles.reservationBtnTitle}>Reservar Mesa</Text>
+                  <Text style={styles.reservationBtnSubtitle}>Garanta seu lugar sem filas</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+              </View>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.reviewsSection}>
             <View style={styles.reviewsHeader}>
               <Text style={styles.sectionTitle}>Avaliações ({reviews.length})</Text>
@@ -285,6 +374,124 @@ export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
         onSubmit={handleWriteReview}
         onClose={() => setReviewModalVisible(false)}
       />
+
+      <ReservationModal
+        visible={reservationModalVisible}
+        estabelecimento={estabelecimento}
+        onClose={() => setReservationModalVisible(false)}
+        onConfirm={(detalhes) => {
+          setReservationDetails(detalhes);
+          setReservationModalVisible(false);
+          // Pequeno delay para a transição ficar suave
+          setTimeout(() => setConfirmationModalVisible(true), 400);
+        }}
+      />
+
+      <ReservationConfirmation
+        visible={confirmationModalVisible}
+        estabelecimento={estabelecimento}
+        detalhes={reservationDetails}
+        onClose={() => setConfirmationModalVisible(false)}
+      />
+
+      {/* Modal do Item do Cardápio */}
+      <Modal
+        visible={selectedMenuItem !== null}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setSelectedMenuItem(null)}
+      >
+        <View style={styles.menuModalOverlay}>
+          <TouchableOpacity 
+            style={styles.menuModalCloseArea} 
+            activeOpacity={1} 
+            onPress={() => setSelectedMenuItem(null)} 
+          />
+          <View style={styles.menuModalContent}>
+            <View style={styles.menuModalHandle} />
+            <TouchableOpacity 
+              style={styles.menuModalCloseBtn}
+              onPress={() => setSelectedMenuItem(null)}
+            >
+              <Ionicons name="close-circle" size={32} color={colors.textMuted} />
+            </TouchableOpacity>
+            
+            {selectedMenuItem?.imagem ? (
+              <Image source={{ uri: selectedMenuItem.imagem.replace('w=200', 'w=600').replace('w=400', 'w=600') }} style={styles.menuModalImage} />
+            ) : (
+              <View style={[styles.menuModalImage, styles.menuModalPlaceholder]}>
+                <Ionicons name="restaurant-outline" size={56} color={colors.textMuted} />
+                <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 8 }}>Sem foto disponível</Text>
+              </View>
+            )}
+            
+            <ScrollView style={styles.menuModalScroll} showsVerticalScrollIndicator={false}>
+              <View style={styles.menuModalInfo}>
+                {/* Category Badge */}
+                <View style={styles.menuModalCatBadge}>
+                  <Text style={styles.menuModalCatText}>{selectedMenuItem?.categoria}</Text>
+                </View>
+                
+                <Text style={styles.menuModalNome}>{selectedMenuItem?.nome}</Text>
+                <Text style={styles.menuModalPreco}>{selectedMenuItem?.preco}</Text>
+                
+                {selectedMenuItem?.descricao && (
+                  <View style={styles.menuModalDescContainer}>
+                    <View style={styles.menuModalDescHeader}>
+                      <Ionicons name="information-circle-outline" size={18} color={colors.accent} />
+                      <Text style={styles.menuModalDescLabel}>Sobre este item</Text>
+                    </View>
+                    <Text style={styles.menuModalDesc}>{selectedMenuItem?.descricao}</Text>
+                  </View>
+                )}
+
+                {/* Establishment context */}
+                <View style={styles.menuModalEstabRow}>
+                  <Image source={{ uri: estabelecimento.imagem }} style={styles.menuModalEstabImg} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.menuModalEstabNome}>Servido em</Text>
+                    <Text style={styles.menuModalEstabName}>{estabelecimento.nome}</Text>
+                  </View>
+                </View>
+
+                {/* Related items from same category */}
+                {estabelecimento.cardapio && (() => {
+                  const related = estabelecimento.cardapio!.filter(
+                    (item) => item.categoria === selectedMenuItem?.categoria && item.nome !== selectedMenuItem?.nome
+                  );
+                  if (related.length === 0) return null;
+                  return (
+                    <View style={styles.menuModalRelated}>
+                      <Text style={styles.menuModalRelatedTitle}>Outros em {selectedMenuItem?.categoria}</Text>
+                      {related.slice(0, 3).map((item, idx) => (
+                        <TouchableOpacity 
+                          key={idx} 
+                          style={styles.menuModalRelatedItem}
+                          onPress={() => setSelectedMenuItem(item)}
+                          activeOpacity={0.7}
+                        >
+                          {item.imagem ? (
+                            <Image source={{ uri: item.imagem }} style={styles.menuModalRelatedImg} />
+                          ) : (
+                            <View style={[styles.menuModalRelatedImg, styles.menuModalRelatedPlaceholder]}>
+                              <Ionicons name="restaurant-outline" size={16} color={colors.textMuted} />
+                            </View>
+                          )}
+                          <View style={{ flex: 1, marginLeft: 10 }}>
+                            <Text style={styles.menuModalRelatedNome} numberOfLines={1}>{item.nome}</Text>
+                            <Text style={styles.menuModalRelatedDesc} numberOfLines={1}>{item.descricao}</Text>
+                          </View>
+                          <Text style={styles.menuModalRelatedPreco}>{item.preco}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  );
+                })()}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -511,7 +718,42 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   actionButtonOutlineText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.accent,
+    fontFamily: FONTS.semiBold,
+  },
+  reservationSection: {
+    marginBottom: 24,
+  },
+  reservationBtn: {
+    backgroundColor: colors.accent,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  reservationBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  reservationBtnTextGroup: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  reservationBtnTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.primary,
+    fontFamily: FONTS.bold,
+    marginBottom: 2,
+  },
+  reservationBtnSubtitle: {
+    fontSize: 13,
+    color: colors.primary,
+    opacity: 0.85,
+    fontFamily: FONTS.medium,
   },
   reviewsSection: {
     marginBottom: 24,
@@ -554,5 +796,268 @@ const getStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
     fontSize: 13,
     color: colors.textMuted,
     marginTop: 4,
+  },
+  especialidadesSection: {
+    marginBottom: 24,
+  },
+  especialidadesList: {
+    gap: 8,
+  },
+  especialidadeItem: {
+    backgroundColor: colors.card,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  especialidadeText: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  cardapioSection: {
+    marginBottom: 24,
+  },
+  cardapioHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  cardapioLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.accentUltraLight,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    gap: 5,
+  },
+  cardapioLinkText: {
+    fontSize: 12,
+    color: colors.accent,
+    fontWeight: '600',
+  },
+  cardapioCategoria: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.accent,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  cardapioItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cardapioItemImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  cardapioItemPlaceholder: {
+    backgroundColor: colors.accentUltraLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardapioItemLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  cardapioItemNome: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  cardapioItemDesc: {
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 3,
+  },
+  cardapioItemPreco: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: colors.accent,
+  },
+  menuModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  menuModalCloseArea: {
+    flex: 1,
+  },
+  menuModalContent: {
+    backgroundColor: colors.primary,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: '85%',
+    paddingBottom: 40,
+  },
+  menuModalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: colors.border,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  menuModalCloseBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 16,
+  },
+  menuModalImage: {
+    width: '100%',
+    height: 220,
+  },
+  menuModalPlaceholder: {
+    backgroundColor: colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuModalScroll: {
+    flex: 1,
+  },
+  menuModalInfo: {
+    padding: 24,
+    paddingBottom: 40,
+  },
+  menuModalCatBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.accentUltraLight,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  menuModalCatText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.accent,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  menuModalNome: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.text,
+    fontFamily: FONTS.bold,
+    marginBottom: 8,
+  },
+  menuModalPreco: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: colors.accent,
+    marginBottom: 20,
+  },
+  menuModalDescContainer: {
+    backgroundColor: colors.card,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 20,
+  },
+  menuModalDescHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  menuModalDescLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.accent,
+  },
+  menuModalDesc: {
+    fontSize: 15,
+    color: colors.text,
+    lineHeight: 24,
+  },
+  menuModalEstabRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 12,
+    marginBottom: 20,
+  },
+  menuModalEstabImg: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+  },
+  menuModalEstabNome: {
+    fontSize: 11,
+    color: colors.textMuted,
+    fontWeight: '500',
+  },
+  menuModalEstabName: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginTop: 2,
+  },
+  menuModalRelated: {
+    marginTop: 4,
+  },
+  menuModalRelatedTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  menuModalRelatedItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  menuModalRelatedImg: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+  },
+  menuModalRelatedPlaceholder: {
+    backgroundColor: colors.accentUltraLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuModalRelatedNome: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  menuModalRelatedDesc: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  menuModalRelatedPreco: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.accent,
+    marginLeft: 8,
   },
 });

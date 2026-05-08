@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet, Text, View, Dimensions, TouchableOpacity, Animated,
   FlatList,
@@ -10,16 +10,17 @@ import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export const ONBOARDING_KEY = '@GuiaCuritiba:onboardingDone';
 
 type Slide = {
   id: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  emoji: string;
   title: string;
   description: string;
-  color: string;
+  gradientStart: string;
+  gradientEnd: string;
 };
 
 type OnboardingScreenProps = {
@@ -33,33 +34,55 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onFinish }) 
   const SLIDES: Slide[] = [
     {
       id: '1',
-      icon: 'compass',
-      title: 'Descubra Curitiba',
-      description: 'Explore os melhores restaurantes, cafeterias, bares e padarias da cidade.',
-      color: colors.accent,
+      emoji: '🗺️',
+      title: 'Explore Curitiba',
+      description: 'Descubra restaurantes, cafés, bares e padarias escondidos pela capital paranaense.',
+      gradientStart: 'rgba(212, 175, 55, 0.08)',
+      gradientEnd: 'rgba(212, 175, 55, 0.02)',
     },
     {
       id: '2',
-      icon: 'heart',
-      title: 'Salve seus favoritos',
-      description: 'Favorite os lugares que mais gostar e encontre-os facilmente depois.',
-      color: colors.danger,
+      emoji: '🍽️',
+      title: 'Cardápios completos',
+      description: 'Veja o menu, fotos dos pratos e preços antes de sair de casa. Sem surpresas!',
+      gradientStart: 'rgba(255, 107, 107, 0.08)',
+      gradientEnd: 'rgba(255, 107, 107, 0.02)',
     },
     {
       id: '3',
-      icon: 'star',
-      title: 'Avalie e compartilhe',
-      description: 'Deixe sua avaliação e compartilhe as melhores descobertas com amigos.',
-      color: colors.star,
+      emoji: '⭐',
+      title: 'Avalie e salve',
+      description: 'Favorite os melhores lugares, deixe avaliações e ajude outros curitibanos.',
+      gradientStart: 'rgba(255, 193, 7, 0.08)',
+      gradientEnd: 'rgba(255, 193, 7, 0.02)',
+    },
+    {
+      id: '4',
+      emoji: '📍',
+      title: 'Perto de você',
+      description: 'Use o mapa interativo para encontrar opções ao seu redor em tempo real.',
+      gradientStart: 'rgba(76, 175, 80, 0.08)',
+      gradientEnd: 'rgba(76, 175, 80, 0.02)',
     },
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.spring(bounceAnim, {
+      toValue: 1,
+      tension: 50,
+      friction: 7,
+      useNativeDriver: true,
+    }).start();
+  }, [currentIndex]);
 
   const handleNext = () => {
     if (currentIndex < SLIDES.length - 1) {
+      bounceAnim.setValue(0);
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
       setCurrentIndex(currentIndex + 1);
     } else {
@@ -78,7 +101,15 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onFinish }) 
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index ?? 0);
+      const newIndex = viewableItems[0].index ?? 0;
+      setCurrentIndex(newIndex);
+      bounceAnim.setValue(0);
+      Animated.spring(bounceAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }).start();
     }
   }).current;
 
@@ -88,23 +119,51 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onFinish }) 
       index * SCREEN_WIDTH,
       (index + 1) * SCREEN_WIDTH,
     ];
-    const iconScale = scrollX.interpolate({
-      inputRange,
-      outputRange: [0.5, 1, 0.5],
-      extrapolate: 'clamp',
-    });
     const textOpacity = scrollX.interpolate({
       inputRange,
       outputRange: [0, 1, 0],
       extrapolate: 'clamp',
     });
+    const textTranslate = scrollX.interpolate({
+      inputRange,
+      outputRange: [40, 0, -40],
+      extrapolate: 'clamp',
+    });
+    const emojiScale = scrollX.interpolate({
+      inputRange,
+      outputRange: [0.4, 1, 0.4],
+      extrapolate: 'clamp',
+    });
+    const emojiRotate = scrollX.interpolate({
+      inputRange,
+      outputRange: ['-15deg', '0deg', '15deg'],
+      extrapolate: 'clamp',
+    });
 
     return (
       <View style={styles.slide}>
-        <Animated.View style={[styles.iconContainer, { transform: [{ scale: iconScale }], borderColor: item.color }]}>
-          <Ionicons name={item.icon} size={64} color={item.color} />
-        </Animated.View>
-        <Animated.View style={{ opacity: textOpacity }}>
+        <View style={[styles.slideGradient, { backgroundColor: item.gradientStart }]} />
+        
+        <View style={styles.emojiSection}>
+          <Animated.View style={[
+            styles.emojiCircle,
+            {
+              transform: [
+                { scale: emojiScale },
+                { rotate: emojiRotate },
+              ],
+            },
+          ]}>
+            <Text style={styles.emoji}>{item.emoji}</Text>
+          </Animated.View>
+          
+          {/* Decorative floating dots */}
+          <View style={[styles.floatingDot, styles.dot1, { backgroundColor: colors.accent }]} />
+          <View style={[styles.floatingDot, styles.dot2, { backgroundColor: colors.star }]} />
+          <View style={[styles.floatingDot, styles.dot3, { backgroundColor: colors.success }]} />
+        </View>
+        
+        <Animated.View style={[styles.textSection, { opacity: textOpacity, transform: [{ translateX: textTranslate }] }]}>
           <Text style={styles.slideTitle}>{item.title}</Text>
           <Text style={styles.slideDescription}>{item.description}</Text>
         </Animated.View>
@@ -121,6 +180,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onFinish }) 
           <Text style={styles.skipText}>Pular</Text>
         </TouchableOpacity>
       )}
+      
       <Animated.FlatList
         ref={flatListRef}
         data={SLIDES}
@@ -137,8 +197,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onFinish }) 
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
       />
+      
       <View style={styles.footer}>
-        <View style={styles.dotsContainer}>
+        {/* Progress bar */}
+        <View style={styles.progressContainer}>
           {SLIDES.map((_, index) => {
             const dotWidth = scrollX.interpolate({
               inputRange: [
@@ -146,7 +208,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onFinish }) 
                 index * SCREEN_WIDTH,
                 (index + 1) * SCREEN_WIDTH,
               ],
-              outputRange: [8, 24, 8],
+              outputRange: [8, 32, 8],
               extrapolate: 'clamp',
             });
             const dotOpacity = scrollX.interpolate({
@@ -155,7 +217,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onFinish }) 
                 index * SCREEN_WIDTH,
                 (index + 1) * SCREEN_WIDTH,
               ],
-              outputRange: [0.3, 1, 0.3],
+              outputRange: [0.25, 1, 0.25],
               extrapolate: 'clamp',
             });
             return (
@@ -166,15 +228,22 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onFinish }) 
             );
           })}
         </View>
+        
+        {/* Step counter */}
+        <Text style={styles.stepCounter}>{currentIndex + 1} de {SLIDES.length}</Text>
+        
         <TouchableOpacity style={styles.nextButton} onPress={handleNext} activeOpacity={0.8}>
-          <Text style={styles.nextButtonText}>
-            {isLast ? 'Começar' : 'Próximo'}
-          </Text>
-          <Ionicons
-            name={isLast ? 'checkmark' : 'arrow-forward'}
-            size={20}
-            color={colors.primary}
-          />
+          {isLast ? (
+            <>
+              <Text style={styles.nextButtonText}>Explorar agora</Text>
+              <Ionicons name="sparkles" size={20} color={colors.primary} />
+            </>
+          ) : (
+            <>
+              <Text style={styles.nextButtonText}>Próximo</Text>
+              <Ionicons name="arrow-forward" size={20} color={colors.primary} />
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -191,11 +260,15 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     top: 55,
     right: 24,
     zIndex: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   skipText: {
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textMuted,
     fontWeight: '600',
   },
@@ -204,20 +277,72 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
-    paddingBottom: 100,
+    paddingBottom: 180,
   },
-  iconContainer: {
-    width: 150,
-    height: 150,
-    borderRadius: 40,
+  slideGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: SCREEN_HEIGHT * 0.55,
+    borderBottomLeftRadius: 60,
+    borderBottomRightRadius: 60,
+  },
+  emojiSection: {
+    width: 200,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 48,
+  },
+  emojiCircle: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
     backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 40,
-    borderWidth: 2,
+    borderWidth: 3,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  emoji: {
+    fontSize: 72,
+  },
+  floatingDot: {
+    position: 'absolute',
+    borderRadius: 20,
+  },
+  dot1: {
+    width: 12,
+    height: 12,
+    top: 20,
+    right: 10,
+    opacity: 0.5,
+  },
+  dot2: {
+    width: 8,
+    height: 8,
+    bottom: 30,
+    left: 15,
+    opacity: 0.4,
+  },
+  dot3: {
+    width: 10,
+    height: 10,
+    top: 60,
+    left: 5,
+    opacity: 0.3,
+  },
+  textSection: {
+    alignItems: 'center',
   },
   slideTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: colors.text,
     textAlign: 'center',
@@ -225,11 +350,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 16,
   },
   slideDescription: {
-    fontSize: 16,
+    fontSize: 17,
     color: colors.textMuted,
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 28,
     fontFamily: FONTS.regular,
+    paddingHorizontal: 10,
   },
   footer: {
     position: 'absolute',
@@ -237,9 +363,9 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
-    gap: 30,
+    gap: 20,
   },
-  dotsContainer: {
+  progressContainer: {
     flexDirection: 'row',
     gap: 8,
   },
@@ -248,20 +374,31 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 4,
     backgroundColor: colors.accent,
   },
+  stepCounter: {
+    fontSize: 13,
+    color: colors.textMuted,
+    fontWeight: '500',
+  },
   nextButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.accent,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 16,
-    gap: 8,
-    minWidth: 160,
+    paddingHorizontal: 36,
+    paddingVertical: 18,
+    borderRadius: 20,
+    gap: 10,
+    minWidth: 180,
     justifyContent: 'center',
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   nextButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
     color: colors.primary,
+    fontFamily: FONTS.semiBold,
   },
 });

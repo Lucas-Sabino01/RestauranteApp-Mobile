@@ -4,6 +4,14 @@ export type Categoria = {
   icone: string;
 };
 
+export type ItemCardapio = {
+  nome: string;
+  descricao?: string;
+  preco: string;
+  categoria: string;
+  imagem?: string;
+};
+
 export type Estabelecimento = {
   id: string;
   nome: string;
@@ -18,6 +26,10 @@ export type Estabelecimento = {
   imagem: string;
   fotos: string[];
   categoria: string;
+  subcategoria?: string;
+  especialidades?: string[];
+  cardapio?: ItemCardapio[];
+  linkCardapio?: string;
   destaque?: boolean;
   coordenadas: {
     latitude: number;
@@ -97,4 +109,18 @@ export type Evento = {
   dataInicio: string;
   dataFim: string;
   tipo: 'promoção' | 'evento' | 'especial';
+};
+
+export type Reserva = {
+  id: string;
+  estabelecimentoId: string;
+  estabelecimentoNome: string;
+  estabelecimentoImagem: string;
+  estabelecimentoEndereco: string;
+  data: string;
+  hora: string;
+  pessoas: number;
+  obs: string;
+  criadoEm: string;
+  status: 'confirmada' | 'cancelada';
 };

@@ -5,7 +5,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
 import Toast from 'react-native-toast-message';
 import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
@@ -41,6 +40,12 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
 
   const handleTestNotification = async () => {
     try {
+      const Constants = require('expo-constants').default;
+      if (Constants.appOwnership === 'expo') {
+        Toast.show({ type: 'info', text1: 'Notificações indisponíveis', text2: 'Use um development build para testar' });
+        return;
+      }
+      const Notifications = require('expo-notifications');
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== 'granted') {
         Toast.show({ type: 'error', text1: 'Permissão negada' });
@@ -57,7 +62,7 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
       });
       Toast.show({ type: 'info', text1: 'Notificação enviada' });
     } catch (error) {
-      Toast.show({ type: 'error', text1: 'Erro ao enviar' });
+      Toast.show({ type: 'error', text1: 'Erro ao enviar', text2: 'Funcionalidade requer development build' });
     }
   };
 

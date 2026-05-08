@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { Estabelecimento } from '../types';
 import { estabelecimentoService } from '../services/estabelecimentoService';
 import { useAsyncData } from './useAsyncData';
@@ -31,21 +31,26 @@ export const useSearchEstabelecimentos = (): UseSearchReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const search = useCallback(async (termo: string) => {
-    if (!termo.trim()) {
-      setResults([]);
-      return;
-    }
     try {
       setLoading(true);
       setError(null);
-      const data = await estabelecimentoService.buscar(termo);
-      setResults(data);
+      if (!termo.trim()) {
+        const all = await estabelecimentoService.listar();
+        setResults(all);
+      } else {
+        const data = await estabelecimentoService.buscar(termo);
+        setResults(data);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro na busca');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    search('');
+  }, [search]);
 
   return { results, loading, error, search };
 };

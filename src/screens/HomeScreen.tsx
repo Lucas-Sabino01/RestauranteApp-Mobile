@@ -20,6 +20,8 @@ import { EventCard } from '../components/EventCard';
 import { ErrorState } from '../components/ui/ErrorState';
 import { EstablishmentCardSkeleton, EstablishmentCardVerticalSkeleton } from '../components/ui/SkeletonLoader';
 import { EVENTOS_MOCK } from '../data/mock';
+import { useLocation } from '../contexts/LocationContext';
+import { calcularDistancia } from '../utils';
 import type { HomeScreenProps } from '../navigation/types';
 import type { RootTabNavigationProp } from '../navigation/types';
 import type { Estabelecimento } from '../types';
@@ -30,7 +32,8 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
 
   const [categoriaAtiva, setCategoriaAtiva] = useState('Tudo');
   const { user } = useAuth();
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const { isFavorite, toggleFavorite, favorites } = useFavorites();
+  const { userLocation } = useLocation();
   const { data: categories } = useCategories();
   const { data: estabelecimentos, loading: listLoading, error: listError, refetch } = useEstabelecimentos(categoriaAtiva);
   const { data: destaques, loading: destaquesLoading } = useDestaques();
@@ -50,6 +53,32 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
     () => destaques.find((e) => e.avaliacao >= 4.8) || destaques[0],
     [destaques]
   );
+
+  const pertoDeVoce = useMemo(() => {
+    if (!userLocation || !estabelecimentos) return [];
+    return [...estabelecimentos]
+      .map(e => ({ ...e, dist: calcularDistancia(userLocation.coords.latitude, userLocation.coords.longitude, e.coordenadas.latitude, e.coordenadas.longitude) }))
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, 5);
+  }, [estabelecimentos, userLocation]);
+
+  const sugestoes = useMemo(() => {
+    if (!estabelecimentos || favorites.length === 0) return [];
+    const favEstabs = estabelecimentos.filter(e => isFavorite(e.id));
+    if (favEstabs.length === 0) return [];
+    
+    // Pega a categoria mais frequente dos favoritos
+    const catCounts = favEstabs.reduce((acc, e) => {
+      acc[e.categoria] = (acc[e.categoria] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const favCat = Object.keys(catCounts).sort((a, b) => catCounts[b] - catCounts[a])[0];
+    
+    return estabelecimentos
+      .filter(e => e.categoria === favCat && !isFavorite(e.id))
+      .slice(0, 5);
+  }, [estabelecimentos, favorites, isFavorite]);
 
   const renderEstabelecimento = useCallback(({ item, index }: { item: Estabelecimento; index: number }) => (
     <EstablishmentCard
@@ -186,6 +215,52 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
                   const estab = estabelecimentos.find((e) => e.id === evento.estabelecimentoId);
                   if (estab) navigation.navigate('Detail', { estabelecimento: estab });
                 }}
+              />
+            ))}
+          </ScrollView>
+        </>
+      )}
+
+      {userLocation && pertoDeVoce.length > 0 && (
+        <>
+          <View style={styles.secaoHeader}>
+            <View style={styles.secaoTituloRow}>
+              <Ionicons name="location" size={20} color={colors.accent} />
+              <Text style={styles.secaoTitulo}>Perto de Você</Text>
+            </View>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.destaquesScroll}>
+            {pertoDeVoce.map((item) => (
+              <EstablishmentCard
+                key={item.id}
+                estabelecimento={item}
+                variant="vertical"
+                isFavorito={isFavorite(item.id)}
+                onToggleFavorito={() => toggleFavorite(item.id)}
+                onPress={() => navigation.navigate('Detail', { estabelecimento: item })}
+              />
+            ))}
+          </ScrollView>
+        </>
+      )}
+
+      {sugestoes.length > 0 && (
+        <>
+          <View style={styles.secaoHeader}>
+            <View style={styles.secaoTituloRow}>
+              <Ionicons name="sparkles" size={20} color={colors.accent} />
+              <Text style={styles.secaoTitulo}>Sugestões para Você</Text>
+            </View>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.destaquesScroll}>
+            {sugestoes.map((item) => (
+              <EstablishmentCard
+                key={item.id}
+                estabelecimento={item}
+                variant="vertical"
+                isFavorito={isFavorite(item.id)}
+                onToggleFavorito={() => toggleFavorite(item.id)}
+                onPress={() => navigation.navigate('Detail', { estabelecimento: item })}
               />
             ))}
           </ScrollView>
