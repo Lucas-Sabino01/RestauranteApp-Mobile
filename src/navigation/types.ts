@@ -26,6 +26,8 @@ export type ProfileStackParamList = {
   FavoritesDetail: { estabelecimento: Estabelecimento };
   Settings: undefined;
   EditProfile: undefined;
+  MyReservations: undefined;
+  MyReviews: undefined;
 };
 
 export type RootTabParamList = {

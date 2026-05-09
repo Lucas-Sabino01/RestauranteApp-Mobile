@@ -9,9 +9,10 @@ import * as Location from 'expo-location';
 import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
-import { ESTABELECIMENTOS, CATEGORIAS } from '../data/mock';
+import { CATEGORIAS } from '../data/mock';
 import { useLocation } from '../contexts/LocationContext';
-import { calcularDistancia, formatarDistancia } from '../utils';
+import { useEstabelecimentos } from '../hooks/useEstabelecimentos';
+import { calcularDistancia, formatarDistancia, CATEGORY_EMOJI } from '../utils';
 import type { Estabelecimento } from '../types';
 import type { MapScreenProps } from '../navigation/types';
 
@@ -28,13 +29,8 @@ if (Platform.OS !== 'web') {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export const CATEGORY_EMOJI: Record<string, string> = {
-  'Cafeterias': '☕',
-  'Restaurantes': '🍽️',
-  'Bares': '🍻',
-  'Padarias': '🥐',
-  'Docerias': '🍰',
-};
+// Re-exported for backward compatibility — prefer importing from '../utils' directly
+export { CATEGORY_EMOJI };
 
 export const MapScreen = ({ navigation }: MapScreenProps) => {
   const { colors, isDark } = useTheme();
@@ -45,6 +41,7 @@ export const MapScreen = ({ navigation }: MapScreenProps) => {
   const [userAddress, setUserAddress] = useState<string | null>(null);
   const mapRef = useRef<any>(null);
   const { userLocation } = useLocation();
+  const { data: estabelecimentos } = useEstabelecimentos();
 
   const initialRegion = {
     latitude: -25.4284,
@@ -71,8 +68,8 @@ export const MapScreen = ({ navigation }: MapScreenProps) => {
   }, [userLocation]);
 
   const filteredEstabelecimentos = selectedCategory
-    ? ESTABELECIMENTOS.filter((e) => e.categoria === selectedCategory)
-    : ESTABELECIMENTOS;
+    ? estabelecimentos.filter((e) => e.categoria === selectedCategory)
+    : estabelecimentos;
 
   const getDistanceStr = useCallback((estab: Estabelecimento) => {
     if (!userLocation) return null;

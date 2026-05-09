@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import * as Location from 'expo-location';
 import {
   StyleSheet, Text, View, Platform, StatusBar,
   FlatList, ScrollView, Image, TouchableOpacity, RefreshControl,
@@ -21,7 +22,7 @@ import { ErrorState } from '../components/ui/ErrorState';
 import { EstablishmentCardSkeleton, EstablishmentCardVerticalSkeleton } from '../components/ui/SkeletonLoader';
 import { EVENTOS_MOCK } from '../data/mock';
 import { useLocation } from '../contexts/LocationContext';
-import { calcularDistancia } from '../utils';
+import { calcularDistancia, getInitials } from '../utils';
 import type { HomeScreenProps } from '../navigation/types';
 import type { RootTabNavigationProp } from '../navigation/types';
 import type { Estabelecimento } from '../types';
@@ -38,6 +39,24 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const { data: estabelecimentos, loading: listLoading, error: listError, refetch } = useEstabelecimentos(categoriaAtiva);
   const { data: destaques, loading: destaquesLoading } = useDestaques();
   const [refreshing, setRefreshing] = useState(false);
+  const [userAddress, setUserAddress] = useState<string>('Curitiba, PR');
+
+  useEffect(() => {
+    if (userLocation) {
+      (async () => {
+        try {
+          const [addr] = await Location.reverseGeocodeAsync({
+            latitude: userLocation.coords.latitude,
+            longitude: userLocation.coords.longitude,
+          });
+          if (addr) {
+            const parts = [addr.street, addr.name, addr.district].filter(Boolean);
+            setUserAddress(parts.join(', ') || 'Localização obtida');
+          }
+        } catch { setUserAddress('Curitiba, PR'); }
+      })();
+    }
+  }, [userLocation]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -97,7 +116,7 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
         <View style={styles.headerLeft}>
           <View style={styles.locationRow}>
             <Ionicons name="location" size={14} color={colors.accent} />
-            <Text style={styles.headerLocal}>Curitiba, PR</Text>
+            <Text style={styles.headerLocal} numberOfLines={1}>{userAddress}</Text>
           </View>
           <Text style={styles.saudacao}>{saudacao}, {nomeUsuario}!</Text>
           <Text style={styles.titulo}>Descubra os{'\n'}melhores lugares 🏙️</Text>
@@ -106,10 +125,16 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
           style={styles.avatarContainer}
           onPress={() => navigation.getParent<RootTabNavigationProp>()?.navigate('ProfileTab')}
         >
-          <Image
-            source={{ uri: user?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg' }}
-            style={styles.avatar}
-          />
+          {user?.avatar ? (
+            <Image
+              source={{ uri: user.avatar }}
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={[styles.avatar, styles.avatarFallback]}>
+              <Text style={styles.avatarFallbackText}>{getInitials(nomeUsuario)}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
       <TouchableOpacity
@@ -282,7 +307,7 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
   ), [
     colors, styles, saudacao, nomeUsuario, user, navigation, categories, categoriaAtiva,
     destaquesLoading, restauranteDaSemana, destaques, isFavorite, toggleFavorite,
-    estabelecimentos, listLoading,
+    estabelecimentos, listLoading, userAddress,
   ]);
 
   if (listError && !listLoading && estabelecimentos.length === 0) {
@@ -305,6 +330,10 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
         ListHeaderComponent={ListHeader}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        initialNumToRender={5}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === 'android'}
         ListFooterComponent={<View style={{ height: SPACING.lg }} />}
         refreshControl={
           <RefreshControl
@@ -367,6 +396,17 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 26,
     borderWidth: 2,
     borderColor: colors.accent,
+  },
+  avatarFallback: {
+    backgroundColor: colors.accentLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 0,
+  },
+  avatarFallbackText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.accent,
   },
   searchContainer: {
     flexDirection: 'row',

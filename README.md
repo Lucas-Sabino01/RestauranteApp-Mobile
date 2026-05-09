@@ -72,6 +72,15 @@ src/
 
 ## 📱 Como Rodar Localmente
 
+### Pré-requisitos
+
+Antes de começar, você precisará ter as seguintes ferramentas instaladas em sua máquina:
+- [Git](https://git-scm.com)
+- [Node.js](https://nodejs.org/en/) (recomendado versão 18+)
+- Um dispositivo físico iOS ou Android com o app **Expo Go** instalado.
+
+### Passo a Passo
+
 1. **Clone o repositório e instale as dependências:**
    ```bash
    npm install
@@ -85,6 +94,18 @@ src/
    - Escaneie o QR Code que aparece no terminal.
 
 *Nota:* Como o app usa integrações nativas de mapa, ele rodará melhor no ambiente mobile físico (Expo Go) do que no emulador web.
+
+## 👨‍💻 Autor
+
+Feito com 💜 por **Lucas Sabino**.  
+Entre em contato ou veja mais projetos:
+
+- [![Portfolio](https://img.shields.io/badge/Portfolio-0077B5?style=for-the-badge&logo=Portfolio&logoColor=white)](https://lucassabino-portfolio.vercel.app/)
+- [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Lucas-Sabino01/)
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT.
 
 ---
 > *Desenvolvido com foco obsessivo em qualidade e experiência do usuário.*

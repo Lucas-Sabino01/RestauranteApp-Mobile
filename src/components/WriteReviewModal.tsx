@@ -8,17 +8,20 @@ import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
 import { StarRating } from './ui/StarRating';
+import type { Review } from '../types';
 
 type WriteReviewModalProps = {
   visible: boolean;
   estabelecimentoNome: string;
-  onSubmit: (nota: number, comentario: string) => void;
+  initialReview?: Review | null;
+  onSubmit: (nota: number, comentario: string, id?: string) => void;
   onClose: () => void;
 };
 
 export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
   visible,
   estabelecimentoNome,
+  initialReview,
   onSubmit,
   onClose,
 }) => {
@@ -28,8 +31,20 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
   const [nota, setNota] = useState(0);
   const [comentario, setComentario] = useState('');
 
-  const handleSubmit = () => {
-    if (nota === 0) {
+  // Sincroniza o estado com a review inicial se ela for fornecida
+  React.useEffect(() => {
+    if (visible) {
+      if (initialReview) {
+        setNota(initialReview.nota);
+        setComentario(initialReview.comentario);
+      } else {
+        setNota(0);
+        setComentario('');
+      }
+    }
+  }, [visible, initialReview]);
+
+  const handleSubmit = () => {    if (nota === 0) {
       Toast.show({ type: 'error', text1: 'Selecione uma nota', visibilityTime: 2000 });
       return;
     }
@@ -37,10 +52,15 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
       Toast.show({ type: 'error', text1: 'Escreva pelo menos 10 caracteres', visibilityTime: 2000 });
       return;
     }
-    onSubmit(nota, comentario.trim());
+    onSubmit(nota, comentario.trim(), initialReview?.id);
     setNota(0);
     setComentario('');
-    Toast.show({ type: 'success', text1: 'Avaliação enviada!', text2: 'Obrigado pelo feedback ❤️', visibilityTime: 2500 });
+    Toast.show({ 
+      type: 'success', 
+      text1: initialReview ? 'Avaliação atualizada!' : 'Avaliação enviada!', 
+      text2: 'Obrigado pelo feedback ❤️', 
+      visibilityTime: 2500 
+    });
   };
 
   const handleClose = () => {
@@ -56,7 +76,7 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
           <View style={styles.handle} />
 
           <View style={styles.header}>
-            <Text style={styles.title}>Avaliar</Text>
+            <Text style={styles.title}>{initialReview ? 'Editar Avaliação' : 'Avaliar'}</Text>
             <TouchableOpacity onPress={handleClose}>
               <Ionicons name="close" size={24} color={colors.textMuted} />
             </TouchableOpacity>
@@ -90,8 +110,8 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
             onPress={handleSubmit}
             activeOpacity={0.8}
           >
-            <Ionicons name="send" size={18} color={colors.primary} />
-            <Text style={styles.submitBtnText}>Enviar avaliação</Text>
+            <Ionicons name={initialReview ? "save" : "send"} size={18} color={colors.primary} />
+            <Text style={styles.submitBtnText}>{initialReview ? 'Salvar alterações' : 'Enviar avaliação'}</Text>
           </TouchableOpacity>
         </View>
       </View>

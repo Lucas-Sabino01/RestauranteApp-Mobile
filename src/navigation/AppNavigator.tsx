@@ -26,6 +26,8 @@ import { RegisterScreen } from '../screens/RegisterScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { EditProfileScreen } from '../screens/EditProfileScreen';
+import { MyReservationsScreen } from '../screens/MyReservationsScreen';
+import { MyReviewsScreen } from '../screens/MyReviewsScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -70,6 +72,8 @@ function ProfileStackNavigator() {
       <ProfileStack.Screen name="FavoritesDetail" component={DetailScreen} />
       <ProfileStack.Screen name="Settings" component={SettingsScreen} />
       <ProfileStack.Screen name="EditProfile" component={EditProfileScreen} />
+      <ProfileStack.Screen name="MyReservations" component={MyReservationsScreen} />
+      <ProfileStack.Screen name="MyReviews" component={MyReviewsScreen} />
     </ProfileStack.Navigator>
   );
 }

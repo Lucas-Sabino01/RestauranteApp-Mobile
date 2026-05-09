@@ -9,8 +9,9 @@ import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
 import { useFavorites } from '../contexts/FavoritesContext';
-import { ESTABELECIMENTOS } from '../data/mock';
+import { useEstabelecimentos } from '../hooks/useEstabelecimentos';
 import { EstablishmentCard } from '../components/EstablishmentCard';
+import { EstablishmentCardSkeleton } from '../components/ui/SkeletonLoader';
 import type { FavoritesScreenProps } from '../navigation/types';
 import type { Estabelecimento } from '../types';
 
@@ -19,10 +20,11 @@ export const FavoritesScreen = ({ navigation }: FavoritesScreenProps) => {
   const styles = getStyles(colors);
 
   const { favorites, isFavorite, toggleFavorite, clearFavorites } = useFavorites();
+  const { data: todosEstabelecimentos, loading } = useEstabelecimentos();
 
   const favEstabelecimentos = useMemo(
-    () => ESTABELECIMENTOS.filter((e) => favorites.includes(e.id)),
-    [favorites]
+    () => todosEstabelecimentos.filter((e) => favorites.includes(e.id)),
+    [todosEstabelecimentos, favorites]
   );
 
   const renderItem = useCallback(({ item }: { item: Estabelecimento }) => (
@@ -51,7 +53,11 @@ export const FavoritesScreen = ({ navigation }: FavoritesScreenProps) => {
         )}
       </View>
 
-      {favEstabelecimentos.length === 0 ? (
+      {loading ? (
+        <View style={styles.listContainer}>
+          {[1, 2, 3].map((i) => <EstablishmentCardSkeleton key={i} />)}
+        </View>
+      ) : favEstabelecimentos.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIllustration}>
             <View style={[styles.emptyBubble, styles.bubble1]}>
@@ -86,6 +92,10 @@ export const FavoritesScreen = ({ navigation }: FavoritesScreenProps) => {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
+          initialNumToRender={5}
+          maxToRenderPerBatch={5}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS === 'android'}
           ListHeaderComponent={
             <Text style={styles.countText}>
               {favEstabelecimentos.length} {favEstabelecimentos.length === 1 ? 'lugar salvo' : 'lugares salvos'}

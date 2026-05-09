@@ -12,12 +12,15 @@ import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { useReviews } from '../contexts/ReviewsContext';
+import { useReservations } from '../contexts/ReservationsContext';
+import { useAuth } from '../contexts/AuthContext';
 import { OpenBadge } from '../components/ui/OpenBadge';
 import { PhotoViewer } from '../components/PhotoViewer';
 import { ReviewCard } from '../components/ReviewCard';
 import { WriteReviewModal } from '../components/WriteReviewModal';
 import { ReservationModal } from '../components/ReservationModal';
 import { ReservationConfirmation } from '../components/ReservationConfirmation';
+import { MenuItemModal } from '../components/MenuItemModal';
 import { useLocation } from '../contexts/LocationContext';
 import { getOpenStatus, formatShareText, calcularDistancia, formatarDistancia } from '../utils';
 import { REVIEWS_MOCK } from '../data/mock';
@@ -33,6 +36,8 @@ export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
   const { estabelecimento } = route.params as { estabelecimento: Estabelecimento };
   const { isFavorite, toggleFavorite } = useFavorites();
   const { getReviews, addReview } = useReviews();
+  const { addReservation } = useReservations();
+  const { user } = useAuth();
   const [activePhoto, setActivePhoto] = useState(0);
   const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
   const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
@@ -327,7 +332,15 @@ export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
               <Text style={styles.sectionTitle}>Avaliações ({reviews.length})</Text>
               <TouchableOpacity
                 style={styles.writeReviewBtn}
-                onPress={() => setReviewModalVisible(true)}
+                onPress={() => {
+                  if (!user) {
+                    // Navega para a aba de Perfil -> Stack -> Login
+                    // @ts-ignore - Simplificando a navegação encadeada para não tipar profundamente
+                    navigation.navigate('ProfileTab', { screen: 'Login' });
+                  } else {
+                    setReviewModalVisible(true);
+                  }
+                }}
                 activeOpacity={0.7}
               >
                 <Ionicons name="create-outline" size={16} color={colors.accent} />
@@ -380,6 +393,23 @@ export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
         estabelecimento={estabelecimento}
         onClose={() => setReservationModalVisible(false)}
         onConfirm={(detalhes) => {
+          // Salva a reserva no contexto (persiste no AsyncStorage)
+          const novaReserva = {
+            id: `reserva-${Date.now()}`,
+            estabelecimentoId: estabelecimento.id,
+            estabelecimentoNome: estabelecimento.nome,
+            estabelecimentoImagem: estabelecimento.imagem,
+            estabelecimentoEndereco: estabelecimento.endereco,
+            data: new Date(detalhes.data).toLocaleDateString('pt-BR', {
+              day: '2-digit', month: '2-digit', year: 'numeric',
+            }),
+            hora: detalhes.hora,
+            pessoas: detalhes.pessoas,
+            obs: detalhes.obs,
+            criadoEm: new Date().toISOString(),
+            status: 'confirmada' as const,
+          };
+          addReservation(novaReserva);
           setReservationDetails(detalhes);
           setReservationModalVisible(false);
           // Pequeno delay para a transição ficar suave
@@ -394,104 +424,12 @@ export const DetailScreen = ({ route, navigation }: AnyDetailScreenProps) => {
         onClose={() => setConfirmationModalVisible(false)}
       />
 
-      {/* Modal do Item do Cardápio */}
-      <Modal
-        visible={selectedMenuItem !== null}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setSelectedMenuItem(null)}
-      >
-        <View style={styles.menuModalOverlay}>
-          <TouchableOpacity 
-            style={styles.menuModalCloseArea} 
-            activeOpacity={1} 
-            onPress={() => setSelectedMenuItem(null)} 
-          />
-          <View style={styles.menuModalContent}>
-            <View style={styles.menuModalHandle} />
-            <TouchableOpacity 
-              style={styles.menuModalCloseBtn}
-              onPress={() => setSelectedMenuItem(null)}
-            >
-              <Ionicons name="close-circle" size={32} color={colors.textMuted} />
-            </TouchableOpacity>
-            
-            {selectedMenuItem?.imagem ? (
-              <Image source={{ uri: selectedMenuItem.imagem.replace('w=200', 'w=600').replace('w=400', 'w=600') }} style={styles.menuModalImage} />
-            ) : (
-              <View style={[styles.menuModalImage, styles.menuModalPlaceholder]}>
-                <Ionicons name="restaurant-outline" size={56} color={colors.textMuted} />
-                <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 8 }}>Sem foto disponível</Text>
-              </View>
-            )}
-            
-            <ScrollView style={styles.menuModalScroll} showsVerticalScrollIndicator={false}>
-              <View style={styles.menuModalInfo}>
-                {/* Category Badge */}
-                <View style={styles.menuModalCatBadge}>
-                  <Text style={styles.menuModalCatText}>{selectedMenuItem?.categoria}</Text>
-                </View>
-                
-                <Text style={styles.menuModalNome}>{selectedMenuItem?.nome}</Text>
-                <Text style={styles.menuModalPreco}>{selectedMenuItem?.preco}</Text>
-                
-                {selectedMenuItem?.descricao && (
-                  <View style={styles.menuModalDescContainer}>
-                    <View style={styles.menuModalDescHeader}>
-                      <Ionicons name="information-circle-outline" size={18} color={colors.accent} />
-                      <Text style={styles.menuModalDescLabel}>Sobre este item</Text>
-                    </View>
-                    <Text style={styles.menuModalDesc}>{selectedMenuItem?.descricao}</Text>
-                  </View>
-                )}
-
-                {/* Establishment context */}
-                <View style={styles.menuModalEstabRow}>
-                  <Image source={{ uri: estabelecimento.imagem }} style={styles.menuModalEstabImg} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.menuModalEstabNome}>Servido em</Text>
-                    <Text style={styles.menuModalEstabName}>{estabelecimento.nome}</Text>
-                  </View>
-                </View>
-
-                {/* Related items from same category */}
-                {estabelecimento.cardapio && (() => {
-                  const related = estabelecimento.cardapio!.filter(
-                    (item) => item.categoria === selectedMenuItem?.categoria && item.nome !== selectedMenuItem?.nome
-                  );
-                  if (related.length === 0) return null;
-                  return (
-                    <View style={styles.menuModalRelated}>
-                      <Text style={styles.menuModalRelatedTitle}>Outros em {selectedMenuItem?.categoria}</Text>
-                      {related.slice(0, 3).map((item, idx) => (
-                        <TouchableOpacity 
-                          key={idx} 
-                          style={styles.menuModalRelatedItem}
-                          onPress={() => setSelectedMenuItem(item)}
-                          activeOpacity={0.7}
-                        >
-                          {item.imagem ? (
-                            <Image source={{ uri: item.imagem }} style={styles.menuModalRelatedImg} />
-                          ) : (
-                            <View style={[styles.menuModalRelatedImg, styles.menuModalRelatedPlaceholder]}>
-                              <Ionicons name="restaurant-outline" size={16} color={colors.textMuted} />
-                            </View>
-                          )}
-                          <View style={{ flex: 1, marginLeft: 10 }}>
-                            <Text style={styles.menuModalRelatedNome} numberOfLines={1}>{item.nome}</Text>
-                            <Text style={styles.menuModalRelatedDesc} numberOfLines={1}>{item.descricao}</Text>
-                          </View>
-                          <Text style={styles.menuModalRelatedPreco}>{item.preco}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  );
-                })()}
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <MenuItemModal
+        item={selectedMenuItem}
+        estabelecimento={estabelecimento}
+        onClose={() => setSelectedMenuItem(null)}
+        onSelectRelated={(item) => setSelectedMenuItem(item)}
+      />
     </SafeAreaView>
   );
 };

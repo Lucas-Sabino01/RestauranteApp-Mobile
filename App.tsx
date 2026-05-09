@@ -13,6 +13,7 @@ import {
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { FavoritesProvider } from './src/contexts/FavoritesContext';
 import { ReviewsProvider } from './src/contexts/ReviewsContext';
+import { ReservationsProvider } from './src/contexts/ReservationsContext';
 import { LocationProvider } from './src/contexts/LocationContext';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
@@ -80,10 +81,12 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <LocationProvider>
-          <FavoritesProvider>
+            <FavoritesProvider>
               <ReviewsProvider>
-                <AppContent />
-                <Toast config={toastConfig} />
+                <ReservationsProvider>
+                  <AppContent />
+                  <Toast config={toastConfig} />
+                </ReservationsProvider>
               </ReviewsProvider>
             </FavoritesProvider>
           </LocationProvider>

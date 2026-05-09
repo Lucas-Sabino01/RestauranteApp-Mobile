@@ -14,11 +14,10 @@ import { useFavorites } from '../contexts/FavoritesContext';
 import { useSearchEstabelecimentos } from '../hooks/useEstabelecimentos';
 import { useDebounce } from '../hooks/useDebounce';
 import { EstablishmentCard } from '../components/EstablishmentCard';
-import { CATEGORY_EMOJI } from './MapScreen';
+import { isOpenNow, calcularDistancia, CATEGORY_EMOJI } from '../utils';
 import { FilterModal, EMPTY_FILTERS } from '../components/FilterModal';
 import type { Filters } from '../components/FilterModal';
 import { EstablishmentCardSkeleton } from '../components/ui/SkeletonLoader';
-import { isOpenNow, calcularDistancia } from '../utils';
 import { useLocation } from '../contexts/LocationContext';
 import type { SearchScreenProps } from '../navigation/types';
 import type { Estabelecimento } from '../types';
@@ -139,6 +138,17 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
       if (distance > filters.distanciaMaxima) return false;
     }
     return true;
+  }).sort((a, b) => {
+    if (!location) return 0;
+    const distA = calcularDistancia(
+      location.coords.latitude, location.coords.longitude,
+      a.coordenadas.latitude, a.coordenadas.longitude
+    );
+    const distB = calcularDistancia(
+      location.coords.latitude, location.coords.longitude,
+      b.coordenadas.latitude, b.coordenadas.longitude
+    );
+    return distA - distB;
   });
 
   useEffect(() => {
@@ -241,7 +251,7 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
           />
         </View>
       )}
-      {searchTerm.length === 0 && recentSearches.length > 0 && results.length > 0 && (
+      {searchTerm.length === 0 && recentSearches.length > 0 && (
         <View style={styles.recentContainer}>
           <View style={styles.recentHeader}>
             <Text style={styles.recentTitle}>Buscas recentes</Text>
@@ -372,6 +382,10 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
+          initialNumToRender={6}
+          maxToRenderPerBatch={6}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS === 'android'}
           ListHeaderComponent={
             <Text style={styles.resultCount}>
               {filteredResults.length} {filteredResults.length === 1 ? 'resultado' : 'resultados'}

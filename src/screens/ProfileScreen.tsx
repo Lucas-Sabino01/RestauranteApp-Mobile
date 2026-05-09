@@ -5,14 +5,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Toast from 'react-native-toast-message';
 import { useTheme } from '../contexts/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
 import { FONTS } from '../theme/fonts';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { useReviews } from '../contexts/ReviewsContext';
+import { useReservations } from '../contexts/ReservationsContext';
 import { ATIVIDADES_AMIGOS } from '../data/mock';
+import { getInitials } from '../utils';
 import type { ProfileScreenProps } from '../navigation/types';
 
 type MenuItem = {
@@ -30,6 +31,7 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
   const { user, isAuthenticated, logout } = useAuth();
   const { favorites } = useFavorites();
   const { userReviewCount } = useReviews();
+  const { reservationCount } = useReservations();
 
   const handleLogout = () => {
     Alert.alert('Sair', 'Tem certeza que deseja sair da conta?', [
@@ -38,33 +40,6 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
     ]);
   };
 
-  const handleTestNotification = async () => {
-    try {
-      const Constants = require('expo-constants').default;
-      if (Constants.appOwnership === 'expo') {
-        Toast.show({ type: 'info', text1: 'Notificações indisponíveis', text2: 'Use um development build para testar' });
-        return;
-      }
-      const Notifications = require('expo-notifications');
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Toast.show({ type: 'error', text1: 'Permissão negada' });
-        return;
-      }
-      
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Novo café adicionado! ☕',
-          body: 'O "Café das Flores" acabou de chegar no Guia Curitiba.',
-          sound: true,
-        },
-        trigger: null,
-      });
-      Toast.show({ type: 'info', text1: 'Notificação enviada' });
-    } catch (error) {
-      Toast.show({ type: 'error', text1: 'Erro ao enviar', text2: 'Funcionalidade requer development build' });
-    }
-  };
 
   if (!isAuthenticated) {
     return (
@@ -101,6 +76,22 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
       onPress: () => navigation.navigate('Favorites'),
     },
     {
+      icone: 'calendar-outline',
+      label: 'Minhas Reservas',
+      desc: reservationCount > 0
+        ? `${reservationCount} reserva${reservationCount > 1 ? 's' : ''} ativa${reservationCount > 1 ? 's' : ''}`
+        : 'Nenhuma reserva ativa',
+      onPress: () => navigation.navigate('MyReservations'),
+    },
+    {
+      icone: 'star-outline',
+      label: 'Minhas Avaliações',
+      desc: userReviewCount > 0
+        ? `${userReviewCount} avaliação${userReviewCount > 1 ? 'ões' : ''}`
+        : 'Nenhuma avaliação feita',
+      onPress: () => navigation.navigate('MyReviews'),
+    },
+    {
       icone: 'settings-outline',
       label: 'Configurações',
       desc: 'Notificações, tema e privacidade',
@@ -111,12 +102,6 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
       label: 'Ajuda & Suporte',
       desc: 'Central de ajuda e FAQ',
       onPress: () => Linking.openURL('mailto:suporte@guiacuritiba.com.br?subject=Ajuda%20-%20Guia%20Curitiba'),
-    },
-    {
-      icone: 'notifications-outline',
-      label: 'Testar Notificação',
-      desc: 'Envia uma notificação local',
-      onPress: handleTestNotification,
     },
     {
       icone: 'log-out-outline',
@@ -135,10 +120,16 @@ export const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
         <Text style={styles.headerTitulo}>Perfil</Text>
 
         <View style={styles.userCard}>
-          <Image
-            source={{ uri: user?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg' }}
-            style={styles.userAvatar}
-          />
+          {user?.avatar ? (
+            <Image
+              source={{ uri: user.avatar }}
+              style={styles.userAvatar}
+            />
+          ) : (
+            <View style={[styles.userAvatar, styles.avatarFallback]}>
+              <Text style={styles.avatarFallbackText}>{getInitials(user?.nome || 'Visitante')}</Text>
+            </View>
+          )}
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{user?.nome}</Text>
             <Text style={styles.userEmail}>{user?.email}</Text>
@@ -247,6 +238,17 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 32,
     borderWidth: 2,
     borderColor: colors.accent,
+  },
+  avatarFallback: {
+    backgroundColor: colors.accentLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 0,
+  },
+  avatarFallbackText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.accent,
   },
   userInfo: {
     flex: 1,

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, Platform, StatusBar,
-  TouchableOpacity, TextInput, KeyboardAvoidingView, ScrollView, Alert, ActivityIndicator,
+  TouchableOpacity, TextInput, KeyboardAvoidingView, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,8 @@ import type { ThemeColors } from '../theme/colors';
 import { useAuth } from '../contexts/AuthContext';
 import type { LoginScreenProps } from '../navigation/types';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export const LoginScreen = ({ navigation }: LoginScreenProps) => {
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors);
@@ -17,19 +19,32 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [senhaVisivel, setSenhaVisivel] = useState(false);
+  const [erros, setErros] = useState<{ email?: string; senha?: string; geral?: string }>({});
   const { login, loading } = useAuth();
 
-  const handleLogin = async () => {
-    if (!email.trim() || !senha.trim()) {
-      Alert.alert('Campos obrigatórios', 'Preencha email e senha.');
-      return;
+  const validar = () => {
+    const novosErros: typeof erros = {};
+    if (!email.trim()) {
+      novosErros.email = 'Email obrigatório';
+    } else if (!EMAIL_REGEX.test(email.trim())) {
+      novosErros.email = 'Email inválido';
     }
-    const sucesso = await login(email, senha);
+    if (!senha.trim()) {
+      novosErros.senha = 'Senha obrigatória';
+    } else if (senha.length < 6) {
+      novosErros.senha = 'Mínimo de 6 caracteres';
+    }
+    setErros(novosErros);
+    return Object.keys(novosErros).length === 0;
+  };
 
+  const handleLogin = async () => {
+    if (!validar()) return;
+    const sucesso = await login(email.trim(), senha);
     if (sucesso) {
       navigation.goBack();
     } else {
-      Alert.alert('Erro', 'Email ou senha inválidos.');
+      setErros({ geral: 'Email ou senha incorretos. Tente novamente.' });
     }
   };
 
@@ -58,30 +73,38 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
           </View>
 
           <View style={styles.formContainer}>
+            {erros.geral && (
+              <View style={styles.erroGeralContainer}>
+                <Ionicons name="alert-circle" size={16} color={colors.danger} />
+                <Text style={styles.erroGeralText}>{erros.geral}</Text>
+              </View>
+            )}
+
             <Text style={styles.inputLabel}>Email</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={18} color={colors.textMuted} />
+            <View style={[styles.inputContainer, erros.email ? styles.inputError : null]}>
+              <Ionicons name="mail-outline" size={18} color={erros.email ? colors.danger : colors.textMuted} />
               <TextInput
                 style={styles.input}
                 placeholder="seu@email.com"
                 placeholderTextColor={colors.textMuted}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(t) => { setEmail(t); if (erros.email) setErros((p) => ({ ...p, email: undefined })); }}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
               />
             </View>
+            {erros.email && <Text style={styles.erroText}>{erros.email}</Text>}
 
-            <Text style={styles.inputLabel}>Senha</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} />
+            <Text style={[styles.inputLabel, { marginTop: erros.email ? 4 : 0 }]}>Senha</Text>
+            <View style={[styles.inputContainer, erros.senha ? styles.inputError : null]}>
+              <Ionicons name="lock-closed-outline" size={18} color={erros.senha ? colors.danger : colors.textMuted} />
               <TextInput
                 style={styles.input}
                 placeholder="Sua senha"
                 placeholderTextColor={colors.textMuted}
                 value={senha}
-                onChangeText={setSenha}
+                onChangeText={(t) => { setSenha(t); if (erros.senha) setErros((p) => ({ ...p, senha: undefined })); }}
                 secureTextEntry={!senhaVisivel}
               />
               <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -92,6 +115,7 @@ export const LoginScreen = ({ navigation }: LoginScreenProps) => {
                 />
               </TouchableOpacity>
             </View>
+            {erros.senha && <Text style={styles.erroText}>{erros.senha}</Text>}
 
             <TouchableOpacity style={styles.forgotBtn}>
               <Text style={styles.forgotText}>Esqueceu a senha?</Text>
@@ -150,7 +174,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingBottom: 40,
     flexGrow: 1,
   },
-
   backBtn: {
     width: 44,
     height: 44,
@@ -162,7 +185,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-
   brandContainer: {
     alignItems: 'center',
     marginTop: 32,
@@ -187,8 +209,24 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 15,
     color: colors.textMuted,
   },
-
   formContainer: {},
+  erroGeralContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.danger + '18',
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.danger + '40',
+  },
+  erroGeralText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.danger,
+    fontWeight: '500',
+  },
   inputLabel: {
     fontSize: 14,
     color: colors.textSecondary,
@@ -202,19 +240,30 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 56,
-    marginBottom: 18,
+    marginBottom: 4,
     borderWidth: 1,
     borderColor: colors.border,
     gap: 12,
+  },
+  inputError: {
+    borderColor: colors.danger,
+    backgroundColor: colors.danger + '08',
   },
   input: {
     flex: 1,
     fontSize: 15,
     color: colors.text,
   },
-
+  erroText: {
+    fontSize: 12,
+    color: colors.danger,
+    fontWeight: '500',
+    marginBottom: 12,
+    marginLeft: 4,
+  },
   forgotBtn: {
     alignSelf: 'flex-end',
+    marginTop: 8,
     marginBottom: 24,
   },
   forgotText: {
@@ -222,7 +271,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-
   loginBtn: {
     backgroundColor: colors.accent,
     paddingVertical: 18,
@@ -236,7 +284,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-
   divisorRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -252,7 +299,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 13,
     marginHorizontal: 16,
   },
-
   socialRow: {
     flexDirection: 'row',
     gap: 14,
@@ -275,7 +321,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.text,
     fontWeight: '600',
   },
-
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'center',

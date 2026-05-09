@@ -153,3 +153,26 @@ export function formatarDistancia(distanciaEmKm: number): string {
   }
   return `${distanciaEmKm.toFixed(1).replace('.', ',')} km`;
 }
+
+/**
+ * Mapeamento de categoria para emoji — usado nos marcadores do mapa e chips de busca
+ */
+export const CATEGORY_EMOJI: Record<string, string> = {
+  'Cafeterias': '☕',
+  'Restaurantes': '🍽️',
+  'Bares': '🍻',
+  'Padarias': '🥐',
+  'Docerias': '🍰',
+};
+
+/**
+ * Retorna as iniciais do nome para uso em avatares placeholder
+ */
+export function getInitials(nome: string): string {
+  return nome
+    .trim()
+    .split(' ')
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('');
+}
